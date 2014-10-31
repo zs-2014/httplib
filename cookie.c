@@ -315,6 +315,21 @@ void addTest()
     printCookie(cookie) ;
     addKeyValue(cookie, "key", buff) ;
     printCookie(cookie) ;
+    freeCookie(cookie) ;
+
+}
+
+void getValTest()
+{
+    COOKIE *cookie = mallocCookie(10) ;
+    addKeyValue(cookie, "name", "value") ;
+    addKeyValue(cookie, "name1", "value1") ;
+    addKeyValue(cookie, "name2", "value2") ;
+    char buff[30] = {0} ;
+    char buff1[30] = {0} ;
+    char buff2[30] = {0} ;
+    char buff3[30] = {0} ;
+    printf("name = %s\nname1 = %s\nname2 = %s\nname3=%s\n", getValue(cookie, "name", buff), getValue(cookie, "name1", buff1), getValue(cookie, "name2", buff2), getValue(cookie, "name3", buff3)) ;
 
 }
 int main(int argc, char *argv[])
@@ -322,6 +337,7 @@ int main(int argc, char *argv[])
     updateTest() ;
     delTest() ;
     addTest() ;
+    getValTest() ;
     return 0 ;
 }
 
