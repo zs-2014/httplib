@@ -1,5 +1,5 @@
 #ifndef __GLOBAL__H
-
+#define __GLOBAL__H
 
 #define FREE(ptr) free(ptr)
 #define MALLOC(sz) malloc(sz) 
