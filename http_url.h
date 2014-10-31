@@ -1,9 +1,6 @@
 #ifndef __HTTP_ULR__H
 #define __HTTP_URL__H
 
-typedef unsigned int uint ;
-typedef unsigned char uchar ;
-
 #define quotebuff(urlstr, sz) quote(urlstr, sz)
 #define quotestr(urlstr) quote(urlstr, strlen(urlstr))
 

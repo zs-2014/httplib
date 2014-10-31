@@ -2,6 +2,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include <ctype.h>
+
+#include "global.h"
 #include "http_url.h" 
 
 #define SAFE     0X00000001
@@ -10,11 +12,6 @@
 #define IS_SAFE(x) (map[x]&SAFE)
 #define IS_UNSAFE(x) (map[x]&UNSAFE)
 #define IS_RESERVED(x) (map[x]&RESERVED)
-
-#define FREE(ptr) free(ptr)
-#define MALLOC(sz) malloc(sz) 
-#define ALLOC(n, sz) alloc(n, sz)
-#define REALLOC(ptr, sz) realloc(ptr, sz)
 
 static uchar map[256] = {0};
 
@@ -455,11 +452,11 @@ int printURL(const URL *pUrl)
             pUrl ->protocol, pUrl ->host,pUrl ->port, pUrl ->path, pUrl ->param, pUrl ->query, pUrl ->frag) ;
 }
 
-#if 0
+#if 1
 
 int main(int argc, char *argv[])
 {
-    URL *pUrl = parseURL("www.baidu.com/index.html/;name=zs?key=value#this is in the fragment") ;
+    URL *pUrl = parseURL("http://172.100.101.145:8088/index.html/;name=zs?key=value#this is in the fragment") ;
     printURL(pUrl) ;
     freeURL(pUrl);
     return 0 ;
