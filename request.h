@@ -1,15 +1,23 @@
 #ifndef __REQUEST__H
 #define __REQUEST__H
 
-#include "url.h"
+#include "http_url.h"
+#include "cookie.h"
+#include "data.h"
+
+#define GET  0X00000001
+#define POST 0X00000002
 
 typedef struct HttpRequest
 {
     //对url解析的结果
     URL *url ;
-    COOKIE *cookie ; 
+    COOKIE cookie ; 
+    DATA *data;
+    int method;
     //存放待发送的数据
-    uchar *buff ;
+    char *headerBuff ;
+
 } HTTPREQUEST;
 #ifdef __cplusplus
 extern "C" {

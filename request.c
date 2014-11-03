@@ -4,32 +4,45 @@
 
 #include "response.h"
 #include "request.h"
+#include "cookie.h"
 #include "http_url.h"
-
-#define MAX(a, b) (a) > (b) ? (a):(b)
-#define MIN(a, b) (a) > (b) ? (b):(a)
+#include "global.h"
 
 #define VERSION(m, n) (((m)-'0')*10 + (n) - '0')
 #define MIN_VERSION VERSION('1', '0') 
 
-#define MALLOC(sz) malloc(sz)
-#define CALLOC(n, sz) calloc(n, sz)
-#define REALLOC(ptr, sz) realloc(ptr, sz)
-#define FREE(ptr) free(ptr)
-
-HTTPREQUEST * newHTTPREQUEST()
+int initHttpRequest(HTTPREQUEST *httpreq)
 {
-    HTTPREQUEST *httpreq = MALLOC(sizeof(HTTPREQUEST)) ;
-    if(httpreq == NULL)
-    {
-        return NULL ;
-    }
-    httpreq ->cookie = NULL ;
+    httpreq ->method = GET ;
     httpreq ->url = NULL ;
-    return httpreq ;
-
+    return initCookie(&httpreq ->cookie) ;
 }
 
+int freeHttpRequest(HTTPREQUEST *httpreq)
+{
+    if(httpreq == NULL)
+    {
+        return -1 ;
+    }
+    freeURL(httpreq ->url) ; 
+    freeCookie(&httpreq ->cookie) ;
+}
+
+int setRequestMethod(HTTPREQUEST *httpreq, int method)
+{
+    if(httpreq == NULL)
+    {
+        return -1 ;
+    }
+    if(method == GET)
+    {
+        httpreq ->method = GET ;
+    }
+    else
+    {
+        httpreq ->method = POST ;
+    }
+}
 int setHttpRequestUrl(HTTPREQUEST *httpreq, const char *urlstr)
 {
     if(httpreq == NULL || urlstr == NULL)
@@ -50,7 +63,10 @@ int setCookie(HTTPREQUEST *httpreq, COOKIE *cookie)
     {
         return -1 ;
     }
-    httpreq ->cookie = cookie ;
+    if(cookieCopy(&httpreq ->cookie, cookie) == NULL) 
+    {
+        return -1 ;
+    }
     return 0 ;
 }
 
@@ -68,9 +84,13 @@ int addRequstHeader(HTTPREQUEST *httpreq, const uchar *key, const char *value)
     return 0 ; 
 }
 
-int addRequestData(HTTPREQUEST *httpreq, const char *key, const char *value)
+int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const uchar *val, int valSz)
 {
-    return 0 ; 
+    if(httpreq == NULL || key == NULL || value == NULL)
+    {
+        return -1 ;
+    }
+    return addData(httpreq ->data, key, keySz, val, valSz) ;
 }
 
 int sendRequest(HTTPREQUEST *httpreq, int timeout)
@@ -82,3 +102,12 @@ HttpResponseHeader *getResponse(HTTPREQUEST *httpreq)
 {
     return NULL ;
 }
+
+
+#if 1
+int main(int argc, char *argv[])
+{
+    
+    return 0 ;
+}
+#endif

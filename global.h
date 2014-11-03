@@ -6,6 +6,10 @@
 #define CALLOC(n, sz) calloc(n, sz)
 #define REALLOC(ptr, sz) realloc(ptr, sz)
 
+#define MAX(a, b) (a) > (b) ? (a):(b)
+#define MIN(a, b) (a) > (b) ? (b):(a)
+
+
 typedef unsigned int uint ;
 typedef unsigned char uchar ;
 

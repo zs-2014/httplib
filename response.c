@@ -4,17 +4,10 @@
 #include <unistd.h>
 #include "response.h"
 #include "util.h"
-
-#define MAX(a, b) (a) > (b) ? (a):(b)
-#define MIN(a, b) (a) > (b) ? (b):(a)
+#include "global.h"
 
 #define VERSION(m, n) (((m)-'0')*10 + (n) - '0')
 #define MIN_VERSION VERSION('1', '0') 
-
-#define MALLOC(sz) malloc(sz)
-#define CALLOC(n, sz) calloc(n, sz)
-#define REALLOC(ptr, sz) realloc(ptr, sz)
-#define FREE(ptr) free(ptr)
 
 int freeHttpResponseHeader(HttpResponseHeader * httphdr)
 {

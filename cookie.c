@@ -9,9 +9,14 @@
 //如果申请空间失败，则原空间不会释放
 static char *reallocCookie(COOKIE *cookie, uint sz)
 {
-    if(cookie == NULL || cookie ->size > sz)
+    if(cookie == NULL)
     {
         return NULL ;
+    }
+
+    if(cookie ->size > sz)
+    {
+        return cookie ->cookieBuff ;
     }
 
     char *tmp = (char *)CALLOC(1, (sz*sizeof(char))) ;
@@ -104,11 +109,12 @@ int initCookie(COOKIE *cookie)
     {
             return -1 ;
     }
-    cookie ->cookieBuff = (char *)malloc(sizeof(char)*DEFAULT_COOKIE_BUFF_SIZE) ;
-    if(cookie ->cookieBuff == NULL)
-    {
-        return -1 ;
-    }
+    //cookie ->cookieBuff = (char *)malloc(sizeof(char)*DEFAULT_COOKIE_BUFF_SIZE) ;
+    //if(cookie ->cookieBuff == NULL)
+    //{
+    //    return -1 ;
+    //}
+    cookie ->cookieBuff = NULL ;
     cookie ->size = 0 ;
     cookie ->currSize = 0 ;
     return 0 ;

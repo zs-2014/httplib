@@ -1,5 +1,5 @@
 #ifndef __COOKIE__H
-
+#define __COOKIE__H
 #include "global.h"
 
 typedef struct cookie
@@ -27,6 +27,7 @@ int delSecureOption(COOKIE *cookie) ;
 int addHttponlyOption(COOKIE *cookie) ;
 int delHttponlyOption(COOKIE *cookie) ;
 
+COOKIE *cookieCopy(COOKIE *dst, const COOKIE *src) ;
 char *copyValue(COOKIE *cookie, const char *key, char *val) ;
 
 #ifdef __cpluscplus

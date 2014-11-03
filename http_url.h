@@ -1,11 +1,5 @@
-#ifndef __HTTP_ULR__H
+#ifndef __HTTP_URL__H
 #define __HTTP_URL__H
-
-#define quotebuff(urlstr, sz) quote(urlstr, sz)
-#define quotestr(urlstr) quote(urlstr, strlen(urlstr))
-
-#define unquotebuff(urlstr, sz) unquote(urlstr, sz)
-#define unquotestr(urlstr) unquote(urlstr, strlen(urlstr))
 
 typedef struct URL
 {
@@ -28,9 +22,7 @@ typedef struct URL
 extern "C" {
 #endif
 
-extern int init() ;
-extern char* quote(const uchar* urlstr, uint sz) ;
-extern uchar* unquote(const char* urlstr, uint sz) ; 
+extern int freeURL(URL *pUrl) ;
 extern URL* parseURL(const char *pUrlStr) ;
 
 #ifdef __cplusplus
