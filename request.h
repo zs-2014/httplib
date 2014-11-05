@@ -2,6 +2,7 @@
 #define __REQUEST__H
 
 #include "http_url.h"
+#include "httpheader.h"
 #include "cookie.h"
 #include "data.h"
 
@@ -12,12 +13,11 @@ typedef struct HttpRequest
 {
     //对url解析的结果
     URL *url ;
+    HEADER header ;
     COOKIE cookie ; 
-    DATA *data;
+    DATA data;
     int method;
-    //存放待发送的数据
-    char *headerBuff ;
-
+    char version[4] ;
 } HTTPREQUEST;
 #ifdef __cplusplus
 extern "C" {

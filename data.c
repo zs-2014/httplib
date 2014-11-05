@@ -91,7 +91,7 @@ int freeData(DATA *data)
     data ->data = NULL ;
     return 0 ;
 }
-int addData(DATA *data, uchar *key, int keySz, uchar *val, int valSz) 
+int addData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz) 
 {
     if(data == NULL || key == NULL || keySz == 0 || val == NULL || valSz == 0) 
     {
@@ -107,7 +107,7 @@ int addData(DATA *data, uchar *key, int keySz, uchar *val, int valSz)
     data ->currSz += 1;
 }
 
-int deleteData(DATA *data, uchar *key, int keySz) 
+int deleteData(DATA *data, const uchar *key, int keySz) 
 {
     if(data == NULL || key == NULL) 
     {
@@ -126,7 +126,7 @@ int deleteData(DATA *data, uchar *key, int keySz)
     return 0 ;
 }
 
-int updateData(DATA *data, uchar *key, int keySz, uchar *val, int valSz) 
+int updateData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz) 
 {
     if(data == NULL || key == NULL || val == NULL)
     {

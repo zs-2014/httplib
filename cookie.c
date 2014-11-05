@@ -47,16 +47,16 @@ static int search(COOKIE *cookie, const char *key, char **key_b, char **val_b, c
     *key_b = strstr(cookie ->cookieBuff, key) ;
     while(*key_b != NULL) 
     {
-        if((*key_b)[keyLen] == '=' ) 
+        if((*key_b)[keyLen] == '=' && (*key_b == cookie ->cookieBuff || ((*key_b)[-1] == ';'))) 
         {
             *val_b = *key_b + keyLen + 1 ;
             *val_e = strchr(*val_b, ';') ; 
-            *val_e = *val_e == NULL ? *val_b + strlen(*key_b) : *val_e;
+            *val_e = *val_e == NULL ? NULL : *val_e;
             break ;
         }
         else
         {
-            *key_b = strstr(*key_b + 1, key) ;
+            *key_b = strstr(*key_b + keyLen + 1, key) ;
         }
     }
     return 0 ;
@@ -197,7 +197,7 @@ int deleteKey(COOKIE *cookie, const char *key)
         return 0 ;
     }
     // 1  ';'
-    memcpy(key_b, val_e + 1, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;  
+    memcpy(key_b, val_e + 1, cookie ->currSize - (val_e - cookie ->cookieBuff + 1)) ;  
     cookie ->currSize -= val_e - key_b + 1 ;
     cookie ->cookieBuff[cookie ->currSize] = '\0' ;
     return 0 ;
@@ -209,7 +209,8 @@ int updateKey(COOKIE *cookie, const char *key, const char *newValue)
     {
         return -1 ;
     }
-
+    //deleteKey(cookie, key) ;
+    //addKeyValue(cookie, key, newValue) ;
     char *key_b = NULL ; 
     uint keyLen = strlen(key) ;
     char *val_b = NULL ;
