@@ -43,6 +43,18 @@ int initBuffer(BUFFER *buff)
     buff ->size = 0 ;
 }
 
+int freeBuffer(BUFFER *buff)
+{
+    if(buff == NULL)
+    {
+        return -1 ;
+    }
+    FREE(buff ->buff) ;
+    buff ->currSz = 0 ;
+    buff ->size = 0 ;
+    return 0 ;
+}
+
 
 int appendBuff(BUFFER *buff, const uchar *val, uint sz)
 {
@@ -52,7 +64,7 @@ int appendBuff(BUFFER *buff, const uchar *val, uint sz)
     }
     if(buff ->currSz + sz > buff ->size)
     {
-        if(reallocBuffer(buff, buff ->currSz + sz + geGrow(buff)) == NULL)
+        if(reallocBuffer(buff, buff ->currSz + sz + getGrow(buff)) == NULL)
         {
             return -1;
         }
@@ -61,3 +73,30 @@ int appendBuff(BUFFER *buff, const uchar *val, uint sz)
     buff ->currSz += sz ;
     return 0 ;
 }
+
+
+#if 1
+void printBuffer(BUFFER *buff)
+{
+    printf("buff:currSz = %u size = %u\n", buff ->currSz, buff ->size) ;
+}
+void appendBuffTest()
+{
+   BUFFER buff ;
+   initBuffer(&buff) ;
+   appendBuff(&buff, "hello,world",strlen("hello,world")) ;
+   printBuffer(&buff) ;
+   appendBuff(&buff, "hello,world",strlen("hello,world")) ;
+   printBuffer(&buff) ;
+   char bf[1024] = {0} ;
+   appendBuff(&buff, bf, sizeof(bf)) ;
+   printBuffer(&buff) ;
+   freeBuffer(&buff) ;
+}
+
+int main(int argc, char *argv[])
+{
+    appendBuffTest() ; 
+    return 0 ; 
+}
+#endif

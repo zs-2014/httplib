@@ -15,6 +15,7 @@ extern "C"{
 #endif
 
 extern int initBuffer(BUFFER *buff) ;
+extern int freeBuffer(BUFFER *buff) ;
 extern int appendBuff(BUFFER *buff, const uchar *val, uint sz) ;
 
 #ifdef __cplusplus
