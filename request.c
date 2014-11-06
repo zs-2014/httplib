@@ -27,7 +27,7 @@ int initHttpRequest(HTTPREQUEST *httpreq)
     httpreq ->version[0] = '1' ;
     httpreq ->version[1] = '.' ;
     httpreq ->version[2] = '1' ;
-    return initCookie(&httpreq ->cookie) || initHttpHeader(&httpreq ->header) ;
+    return initHttpHeader(&httpreq ->header) ;
 }
 
 int freeHttpRequest(HTTPREQUEST *httpreq)
@@ -37,7 +37,6 @@ int freeHttpRequest(HTTPREQUEST *httpreq)
         return -1 ;
     }
     freeURL(httpreq ->url) ; 
-    freeCookie(&httpreq ->cookie) ;
     freeHttpHeader(&httpreq ->header) ;
     return 0 ;
 }
@@ -67,15 +66,7 @@ int setHttpRequestUrl(HTTPREQUEST *httpreq, const char *urlstr)
 
 int setCookie(HTTPREQUEST *httpreq, COOKIE *cookie)
 {
-    if(httpreq == NULL)
-    {
-        return -1 ;
-    }
-    if(cookieCopy(&httpreq ->cookie, cookie) == NULL) 
-    {
-        return -1 ;
-    }
-    return 0 ;
+    return addRequestHeader(httpreq, "Cookie", cookie2String(cookie)) ;
 }
 
 int setContentType(HTTPREQUEST *httpreq, const char *contentType)
@@ -121,23 +112,89 @@ int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const ucha
     }
     return addData(&httpreq ->data, key, keySz, val, valSz) ;
 }
-
-int sendRequest(HTTPREQUEST *httpreq, int timeout)
+static int addDefaultRequestHeader(HTTPREQUEST *httpreq)
 {
-    if(httpreq == NULL || httpreq ->url == NULL)
+    if(!hasHeader(&httpreq ->header, "Content-Type"))
+    {
+        addRequestHeader(httpreq, "Content-type", "plain/text") ;
+    }
+    if(!hasHeader(&httpreq ->header, "Host"))
+    {
+        addRequestHeader(httpreq, "Host", httpreq ->url ->host) ;
+    }
+    if(!hasHeader(&httpreq ->header, "User-Agent"))
+    {
+        addRequestHeader(httpreq, "User-Agent", "httplib/1.0") ;
+    } 
+    return 0 ;
+}
+
+int sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
+{
+    if(httpreq == NULL || httpreq ->url == NULL) 
     {
         return -1 ;
     }
+
     URL *url = httpreq ->url ;
     int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
     if(fd < 0)
     {
        return -1; 
     }
+    //开始拼凑请求头
     BUFFER buff ;
     initBuffer(&buff) ;
-    //开始拼凑请求头
-    return 0 ;
+    appendBuffer(&buff, "GET ", strlen("GET ")) ;
+    appendBuffer(&buff, "/", strlen("/")) ;
+    if(url ->path != NULL && strlen(url ->path) == 0)
+    {
+        appendBuffer(&buff, url ->path, strlen(url ->path)) ;
+    }
+    appendBuffer(&buff, "?", strlen("?")) ; 
+    if(url ->query != NULL || strlen(url ->query) != 0)
+    {
+        appendBuffer(&buff, url ->query, strlen(url ->query)) ;
+    }
+    if(!isEmpty(&data))
+    {
+        FOREACH(key, val, &data)
+        {
+            appendBuffer(&buff, "&", 1) ;
+            appendBuffer(&buff, key, strlen(key)) ;
+            appendBuffer(&buff, "=", 1)
+            appendBuffer(&buff, val, strlen(val)) ;
+        }
+    }
+    lstripBuffer(&buff, '?') ;
+    //method path version \r\n
+    appendBuffer(&buff, " ", 1) ;
+    appendBuffer(&buff, "HTTP/", 5) ;
+    appendBuffer(&buff, httpreq ->version, strlen(httpreq ->version)) ;
+    appendBuffer(&buff, " \r\n", 2) ; 
+    appendBuffer(&buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
+    appendBuffer(&buff, "\r\n", 2) ;
+}
+
+int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
+{
+    
+}
+int sendRequest(HTTPREQUEST *httpreq, int timeout)
+{
+    if(httpreq == NULL || httpreq ->url == NULL)
+    {
+        return -1 ;
+    }
+
+    if(httpreq ->method == GET)
+    {
+        return sendRequestWithGET(httpreq, timeout) ;
+    }
+    else
+    {
+       //post数据 
+    }
 }
 
 HttpResponseHeader *getResponse(HTTPREQUEST *httpreq)

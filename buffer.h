@@ -14,9 +14,10 @@ typedef struct buffer
 extern "C"{
 #endif
 
+extern BUFFER *lstripBuffer(BUFFER *buff, uchar ch) ;
 extern int initBuffer(BUFFER *buff) ;
 extern int freeBuffer(BUFFER *buff) ;
-extern int appendBuff(BUFFER *buff, const uchar *val, uint sz) ;
+extern int appendBuffer(BUFFER *buff, const uchar *val, uint sz) ;
 
 #ifdef __cplusplus
 }

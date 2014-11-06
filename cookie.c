@@ -323,6 +323,10 @@ char *copyValue(COOKIE *cookie, const char *key, char *val)
     return memcpy(val, val_b ,val_e - val_b);
 }
 
+const char *cookie2String(COOKIE *cookie)
+{
+    return cookie != NULL ?cookie ->cookieBuff :NULL ;
+}
 int printCookie(COOKIE *cookie)
 {
     if(cookie == NULL)

@@ -29,7 +29,7 @@ int delHttponlyOption(COOKIE *cookie) ;
 
 COOKIE *cookieCopy(COOKIE *dst, const COOKIE *src) ;
 char *copyValue(COOKIE *cookie, const char *key, char *val) ;
-
+const char *cookie2String(COOKIE *cookie) ;
 #ifdef __cpluscplus
 }
 #endif

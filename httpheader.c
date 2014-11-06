@@ -1,8 +1,11 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
+
 #include <stdio.h>
 
 #include "global.h"
+#include "util.h"
 #include "httpheader.h"
 
 #define DEFAULT_GROW_SIZE  256
@@ -64,7 +67,7 @@ static HEADER * reallocHeader(HEADER *httphdr, uint sz)
 static int search(HEADER *httphdr, const char *key, char **key_b, char **val_b, char **val_e)
 {
     int keyLen = strlen(key) ;
-    *key_b = strstr(httphdr ->hdrBuff , key) ; 
+    *key_b = strcasestr(httphdr ->hdrBuff , key) ; 
     while(*key_b != NULL)
     {
         if((*key_b)[keyLen] == ':' && (*key_b == httphdr ->hdrBuff || (*key_b)[-1] == '\n')) 
@@ -76,7 +79,7 @@ static int search(HEADER *httphdr, const char *key, char **key_b, char **val_b, 
         }
         else
         {
-           *key_b = strstr(*key_b+keyLen + 1, key) ; 
+           *key_b = strcasestr(*key_b + keyLen + 1, key) ; 
         }
     }
     return 0 ;
@@ -139,6 +142,30 @@ int updateHeader(HEADER *httphdr, const char *key, const char *newValue)
     return deleteHeader(httphdr, key) || addHeader(httphdr, key, newValue) ;
 }
 
+const char *header2String(HEADER *httphdr) 
+{
+    return httphdr != NULL ?httphdr ->hdrBuff:"" ;
+}
+uint headerLen(HEADER *httphdr)
+{
+    return httphdr != NULL ? httphdr ->currSz:0 ;
+}
+int hasHeader(HEADER *httphdr, const char *key) 
+{
+    if(httphdr == NULL || key == NULL)
+    {
+        return 0 ;
+    }
+    char *key_b = NULL ;
+    char *val_b = NULL ;
+    char *val_e = NULL ;
+    search(httphdr, key, &key_b, &val_b, &val_e) ;
+    if(key_b == NULL || val_b == NULL || val_e == NULL)
+    {
+        return 0 ;
+    }
+    return 1 ;
+}
 void printHeader(HEADER *httphdr)
 {
     printf("[%s]\n", httphdr ->hdrBuff) ;
@@ -164,7 +191,7 @@ void deleteHeaderTest()
 {
     HEADER header ;
     initHttpHeader(&header) ;
-    addHeader(&header, "content-type", "application/json ;charset=utf-8"); 
+    addHeader(&header, "content-type1", "application/json ;charset=utf-8"); 
     printHeader(&header) ;
     addHeader(&header, "content-length", "12045") ;
     printHeader(&header) ;
@@ -210,8 +237,8 @@ void updateHeaderTest()
 int main(int argc, char *argv[])
 {
     //addHeaderTest() ;
-   // deleteHeaderTest() ;
-   updateHeaderTest() ;
+    deleteHeaderTest() ;
+   //updateHeaderTest() ;
     return 0 ;
 }
 #endif

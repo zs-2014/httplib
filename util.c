@@ -128,6 +128,50 @@ int connectToServer(const char *server, const char *port, int timeout)
     return cfd ;
 }
 
+const char *casefind(const char *src, const char *needle)
+{
+    if(src == NULL || needle == NULL) 
+    {
+        return NULL ;
+    }
+    while(*src != '\0') 
+    {
+        if(strcasecmp(src, needle) == 0) 
+        {
+            return src ;
+        }
+        src++ ;
+    }
+    return NULL ;
+}
+
+int sendData(int fd, const void *buff, int sz)
+{
+    if(fd < 0 || buff == NULL|| sz)
+    {
+        return 0 ;
+    }
+    int nSend = 0 ;
+    int ret = 0 ;
+    const char *tmp = (const char *)buff ;
+    while((ret = write(fd, tmp + nSend, sz - nSend)) != 0)
+    { 
+        if(ret + nSend == sz)
+        {
+            return sz ;
+        }
+        else if(ret < 0)
+        {
+           return nSend ; 
+        }
+        else
+        {
+            nSend += ret ;
+        }
+    }
+    return nSend ;
+}
+
 #if 1
 int main(int argc,char *argv[])
 {

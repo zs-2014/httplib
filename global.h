@@ -1,6 +1,8 @@
 #ifndef __GLOBAL__H
 #define __GLOBAL__H
 
+#define const
+
 #define FREE(ptr) free(ptr)
 #define MALLOC(sz) malloc(sz) 
 #define CALLOC(n, sz) calloc(n, sz)

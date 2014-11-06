@@ -310,7 +310,7 @@ int printURL(const URL *pUrl)
 
 int main(int argc, char *argv[])
 {
-    URL *pUrl = parseURL("http://172.100.101.145:8088/index.html/;name=zs?key=value#this is in the fragment") ;
+    URL *pUrl = parseURL("http://172.100.101.145:8088\0/index.html/;name=zs?key=value#this is in the fragment") ;
     printURL(pUrl) ;
     freeURL(pUrl);
     return 0 ;

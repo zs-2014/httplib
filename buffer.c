@@ -41,6 +41,7 @@ int initBuffer(BUFFER *buff)
     buff ->buff = NULL ;
     buff ->currSz = 0 ;
     buff ->size = 0 ;
+    return 0 ;
 }
 
 int freeBuffer(BUFFER *buff)
@@ -55,8 +56,7 @@ int freeBuffer(BUFFER *buff)
     return 0 ;
 }
 
-
-int appendBuff(BUFFER *buff, const uchar *val, uint sz)
+int appendBuffer(BUFFER *buff, const uchar *val, uint sz)
 {
     if(buff == NULL || val == NULL)    
     {
@@ -74,29 +74,43 @@ int appendBuff(BUFFER *buff, const uchar *val, uint sz)
     return 0 ;
 }
 
+BUFFER *lstripBuffer(BUFFER *buff, uchar ch)
+{
+    if(buff == NULL)
+    {
+        return NULL ;
+    }
+    for(;buff ->currSz > 0 ;buff ->currSz--) 
+    {
+        if(buff ->buff[buff ->currSz - 1] != ch)
+        {
+            return buff ;
+        }
+    }
+}
 
 #if 1
 void printBuffer(BUFFER *buff)
 {
     printf("buff:currSz = %u size = %u\n", buff ->currSz, buff ->size) ;
 }
-void appendBuffTest()
+void appendBufferTest()
 {
    BUFFER buff ;
    initBuffer(&buff) ;
-   appendBuff(&buff, "hello,world",strlen("hello,world")) ;
+   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
    printBuffer(&buff) ;
-   appendBuff(&buff, "hello,world",strlen("hello,world")) ;
+   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
    printBuffer(&buff) ;
    char bf[1024] = {0} ;
-   appendBuff(&buff, bf, sizeof(bf)) ;
+   appendBuffer(&buff, bf, sizeof(bf)) ;
    printBuffer(&buff) ;
    freeBuffer(&buff) ;
 }
 
 int main(int argc, char *argv[])
 {
-    appendBuffTest() ; 
+    appendBufferTest() ; 
     return 0 ; 
 }
 #endif

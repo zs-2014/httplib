@@ -145,16 +145,29 @@ int updateData(DATA *data, const uchar *key, int keySz, const uchar *val, int va
     return 0 ;
 }
 
+int isEmpty(DATA *data)
+{
+    if(data == NULL || data ->currSz == 0)
+    {
+        return 1 ;
+    }
+    return 0 ;
+}
+
 void printData(DATA *data)
 {
     if(data == NULL)
     {
         return  ;
     }
-    int i = 0 ;
-    for(i = 0 ;i < data ->currSz ;i++)
+    //int i = 0 ;
+    //for(i = 0 ;i < data ->currSz ;i++)
+    //{
+    //    printf("key:%s\nval=%s\n", data->data[i].key, data ->data[i].val) ;
+    //}
+    FOREACH(key, val, data)
     {
-        printf("key:%s\nval=%s\n", data->data[i].key, data ->data[i].val) ;
+        printf("key:%s\nval=%s\n", key,val) ;
     }
 }
 #if 1

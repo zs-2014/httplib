@@ -19,6 +19,9 @@ extern int freeHttpHeader(HEADER *httphdr) ;
 extern int addHeader(HEADER *httphdr, const char *key, const char *value) ;
 extern int deleteHeader(HEADER *httphdr, const char *key) ;
 extern int updateHeader(HEADER *httphdr, const char *key, const char *values) ;
+extern const char *header2String(HEADER *httphdr) ;
+extern uint headerLen(HEADER *httphdr) ;
+extern int hasHeader(HEADER *httphdr, const char *key) ;
 #ifdef __cplusplus
 }
 #endif
