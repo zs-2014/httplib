@@ -144,15 +144,15 @@ int updateHeader(HEADER *httphdr, const char *key, const char *newValue)
 
 const char *header2String(HEADER *httphdr) 
 {
-    return httphdr != NULL ?httphdr ->hdrBuff:"" ;
+    return httphdr != NULL ? (httphdr ->currSz == 0 ? "" : httphdr ->hdrBuff) : "" ;
 }
 uint headerLen(HEADER *httphdr)
 {
-    return httphdr != NULL ? httphdr ->currSz:0 ;
+    return httphdr != NULL ? httphdr ->currSz : 0 ;
 }
 int hasHeader(HEADER *httphdr, const char *key) 
 {
-    if(httphdr == NULL || key == NULL)
+    if(httphdr == NULL || key == NULL || httphdr ->hdrBuff == NULL)
     {
         return 0 ;
     }
@@ -171,7 +171,7 @@ void printHeader(HEADER *httphdr)
     printf("[%s]\n", httphdr ->hdrBuff) ;
 }
 
-#if 1
+#if 0
 void addHeaderTest()
 {
     HEADER header ;

@@ -12,6 +12,12 @@
 #include "global.h"
 
 #define DEFAULT_PORT "80"
+
+#define STR_POST    "POST"
+#define STR_POST_LEN strlen(STR_POST)
+
+#define STR_GET     "GET"
+#define STR_GET_LEN strlen(STR_GET)
 #define VERSION(m, n) (((m)-'0')*10 + (n) - '0')
 #define MIN_VERSION VERSION('1', '0') 
 
@@ -27,7 +33,7 @@ int initHttpRequest(HTTPREQUEST *httpreq)
     httpreq ->version[0] = '1' ;
     httpreq ->version[1] = '.' ;
     httpreq ->version[2] = '1' ;
-    return initHttpHeader(&httpreq ->header) ;
+    return initData(&httpreq ->data)||initHttpHeader(&httpreq ->header) || initHttpHeader(&httpreq ->header) ;
 }
 
 int freeHttpRequest(HTTPREQUEST *httpreq)
@@ -135,7 +141,7 @@ int sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
     {
         return -1 ;
     }
-
+    addDefaultRequestHeader(httpreq) ;    
     URL *url = httpreq ->url ;
     int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
     if(fd < 0)
@@ -145,41 +151,55 @@ int sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
     //开始拼凑请求头
     BUFFER buff ;
     initBuffer(&buff) ;
-    appendBuffer(&buff, "GET ", strlen("GET ")) ;
-    appendBuffer(&buff, "/", strlen("/")) ;
-    if(url ->path != NULL && strlen(url ->path) == 0)
+    appendBuffer(&buff, STR_GET, STR_GET_LEN) ;
+    appendBuffer(&buff, " /", strlen(" /")) ;
+    if(url ->path != NULL && strlen(url ->path) != 0)
     {
         appendBuffer(&buff, url ->path, strlen(url ->path)) ;
     }
     appendBuffer(&buff, "?", strlen("?")) ; 
-    if(url ->query != NULL || strlen(url ->query) != 0)
+    if(url ->query != NULL && strlen(url ->query) != 0)
     {
         appendBuffer(&buff, url ->query, strlen(url ->query)) ;
+        appendBuffer(&buff, "&", 1) ;
     }
-    if(!isEmpty(&data))
+    if(!isEmpty(&httpreq ->data))
     {
-        FOREACH(key, val, &data)
+        FOREACH(key, val, &httpreq ->data)
         {
-            appendBuffer(&buff, "&", 1) ;
             appendBuffer(&buff, key, strlen(key)) ;
-            appendBuffer(&buff, "=", 1)
-            appendBuffer(&buff, val, strlen(val)) ;
+            appendBuffer(&buff, "=", 1) ;
+            if(val != NULL)
+            {
+                appendBuffer(&buff, val, strlen(val)) ;
+            }
+            appendBuffer(&buff, "&", 1) ;
         }
+        lstripBuffer(&buff, '&') ;
     }
     lstripBuffer(&buff, '?') ;
     //method path version \r\n
     appendBuffer(&buff, " ", 1) ;
     appendBuffer(&buff, "HTTP/", 5) ;
     appendBuffer(&buff, httpreq ->version, strlen(httpreq ->version)) ;
-    appendBuffer(&buff, " \r\n", 2) ; 
+    appendBuffer(&buff, "\r\n", 2) ; 
     appendBuffer(&buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
     appendBuffer(&buff, "\r\n", 2) ;
+    if(sendData(fd, getBufferData(&buff), getBufferSize(&buff)) != getBufferSize(&buff))
+    {
+        printf("send [%s] fail\n", getBufferData(&buff)) ;
+    }
+    printf("send [%s] success\n", getBufferData(&buff)) ;
+    char buff1[2048] = {0};
+    readFully(fd, buff1 ,sizeof(buff1) - 1) ;
+    printf("recv:[%s]\n", buff1) ;
 }
 
 int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 {
-    
+    return 0 ; 
 }
+
 int sendRequest(HTTPREQUEST *httpreq, int timeout)
 {
     if(httpreq == NULL || httpreq ->url == NULL)
@@ -193,7 +213,7 @@ int sendRequest(HTTPREQUEST *httpreq, int timeout)
     }
     else
     {
-       //post数据 
+        return sendRequestWithPOST(httpreq, timeout) ;
     }
 }
 
@@ -206,7 +226,15 @@ HttpResponseHeader *getResponse(HTTPREQUEST *httpreq)
 #if 1
 int main(int argc, char *argv[])
 {
-    
+    HTTPREQUEST request ;
+    initHttpRequest(&request) ;
+    setHttpRequestUrl(&request,"http%3A//www.baidu.com/index.html?test=测试") ;
+    addRequestData(&request, "name", strlen("name"), "zs", strlen("zs")) ;
+    addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
+    addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
+
+    sendRequestWithGET(&request, -1) ;
+    freeHttpRequest(&request) ;
     return 0 ;
 }
 #endif

@@ -93,7 +93,7 @@ int freeData(DATA *data)
 }
 int addData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz) 
 {
-    if(data == NULL || key == NULL || keySz == 0 || val == NULL || valSz == 0) 
+    if(data == NULL || key == NULL || keySz == 0 || val == NULL) 
     {
         return -1 ;
     }
@@ -102,8 +102,8 @@ int addData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz
     {
         return -1 ;
     }
-    data ->data[data ->currSz].key = quotebuff(key, keySz) ;
-    data ->data[data ->currSz].val = quotebuff(val, valSz) ;
+    data ->data[data ->currSz].key = quotebuff(key, keySz, NULL) ;
+    data ->data[data ->currSz].val = quotebuff(val, valSz, NULL) ;
     data ->currSz += 1;
 }
 
@@ -113,7 +113,7 @@ int deleteData(DATA *data, const uchar *key, int keySz)
     {
         return -1 ;
     }
-    char *quoteKey = quotebuff(key, keySz) ;
+    char *quoteKey = quotebuff(key, keySz, NULL) ;
     uint i = search(data, quoteKey) ;
     if(i == -1)
     {
@@ -132,7 +132,7 @@ int updateData(DATA *data, const uchar *key, int keySz, const uchar *val, int va
     {
         return -1 ;
     }
-    char *quoteKey = quotebuff(key, keySz) ;
+    char *quoteKey = quotebuff(key, keySz, NULL) ;
     uint i = 0 ;
     if(i == -1)
     {
@@ -141,7 +141,7 @@ int updateData(DATA *data, const uchar *key, int keySz, const uchar *val, int va
     }
     FREE(data ->data[i].val) ;
     FREE(quoteKey) ;
-    data ->data[i].val = quotebuff(val, valSz) ;
+    data ->data[i].val = quotebuff(val, valSz, NULL) ;
     return 0 ;
 }
 
@@ -170,7 +170,8 @@ void printData(DATA *data)
         printf("key:%s\nval=%s\n", key,val) ;
     }
 }
-#if 1
+
+#if 0
 void AddData()
 {
     DATA data ;

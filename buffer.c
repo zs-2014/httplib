@@ -80,7 +80,7 @@ BUFFER *lstripBuffer(BUFFER *buff, uchar ch)
     {
         return NULL ;
     }
-    for(;buff ->currSz > 0 ;buff ->currSz--) 
+    for( ; buff ->currSz > 0 ; buff ->currSz--) 
     {
         if(buff ->buff[buff ->currSz - 1] != ch)
         {
@@ -89,7 +89,18 @@ BUFFER *lstripBuffer(BUFFER *buff, uchar ch)
     }
 }
 
-#if 1
+const uchar* getBufferData(const BUFFER *buff)
+{
+    return buff != NULL ? (buff ->currSz == 0 ? "" : buff ->buff) : "" ;
+}
+
+uint getBufferSize(const BUFFER *buff) 
+{
+   return buff == NULL ? 0 : buff ->currSz ; 
+}
+
+
+#if 0
 void printBuffer(BUFFER *buff)
 {
     printf("buff:currSz = %u size = %u\n", buff ->currSz, buff ->size) ;

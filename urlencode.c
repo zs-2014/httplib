@@ -6,51 +6,51 @@
 #define SAFE     0X00000001
 #define UNSAFE   0X00000010
 #define RESERVED 0X00000100
-#define IS_SAFE(x) (map[x]&SAFE)
-#define IS_UNSAFE(x) (map[x]&UNSAFE)
-#define IS_RESERVED(x) (map[x]&RESERVED)
+#define IS_SAFE(x) (ascii_map[x]&SAFE)
+#define IS_UNSAFE(x) (ascii_map[x]&UNSAFE)
+#define IS_RESERVED(x) (ascii_map[x]&RESERVED)
 
-static uchar map[256] = {0};
-
+#define INIT(safe) char ascii_map[256] = {0} ;init(ascii_map, safe) ;
 static char *safe_char = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$-_.+!*'()" ;
 static char *reserved_char = ";/?:@=&" ;
-static char convert_map[] = "0123456789ABCDEFabcdef" ; 
-
-static int init()
+static char hex_map[] = "0123456789ABCDEFabcdef" ; 
+//"%/:=&?~#+!$,;'@()*[]|"
+static int init(uchar *ascii_map, const uchar *safe)
 {
-    if(IS_UNSAFE(255))
-    {
-        return 0 ; 
-    }
     char *p = safe_char ;
     while(*p != '\0')
     {
-        map[*p++] = (uchar)SAFE ;
+        ascii_map[*p++] = (uchar)SAFE ;
     }
 
     p = reserved_char ;
     while(*p != '\0')
     {
-        map[*p++] = (uchar)RESERVED ;
+        ascii_map[*p++] = (uchar)RESERVED ;
     }
     int i = 0 ;
-    for (i = 0 ;i < sizeof(map) ;i++)
+    for (i = 0 ;i < sizeof(ascii_map) ;i++)
     {
-        if(map[i] != SAFE && map[i] != RESERVED)  
+        if(ascii_map[i] != SAFE && ascii_map[i] != RESERVED)  
         {
-            map[i] = (uchar)UNSAFE ;
+            ascii_map[i] = (uchar)UNSAFE ;
         }
+    }
+    while(safe != NULL && *safe != '\0')
+    {
+        ascii_map[*safe++]  = (uchar)SAFE ;
     }
     return 0 ;
 }
 
-char* quote(const uchar* urlstr, uint sz)
+char* quote(const uchar* urlstr, uint sz, const char *safe)
 {
     if(urlstr == NULL||sz == 0)
     {
         return NULL ;
     }
-    init() ;
+    
+    INIT(safe) ;
     char *pout = (char *)MALLOC(sz*sizeof(uchar)*3 + 1) ;
     char *ptmp = pout ;
     if (pout == NULL)
@@ -68,8 +68,8 @@ char* quote(const uchar* urlstr, uint sz)
        else
        {
             *pout++ = '%' ;
-            *pout++ = convert_map[*urlstr/16] ;    
-            *pout++ = convert_map[*urlstr%16] ;
+            *pout++ = hex_map[*urlstr/16] ;    
+            *pout++ = hex_map[*urlstr%16] ;
             urlstr++ ;
        }
     }
@@ -83,7 +83,7 @@ uchar *unquote(const char *urlstr, uint sz)
     {
         return NULL ;
     }
-    init() ;
+    INIT(NULL) ;
     uchar *pout = (uchar *)MALLOC(sz*sizeof(uchar)+1) ;
     uchar *ptmp = pout ;
     if (pout == NULL)
@@ -155,7 +155,7 @@ uchar *unquote(const char *urlstr, uint sz)
 
 char *urlencode(const char *str)
 {
-    return quotestr(str) ;
+    return quotestr(str, NULL) ;
 }
 
 #if 0

@@ -3,8 +3,8 @@
 
 #include "global.h"
 
-#define quotebuff(urlstr, sz) quote(urlstr, sz)
-#define quotestr(urlstr) quote(urlstr, strlen(urlstr))
+#define quotebuff(urlstr, sz, safe) quote(urlstr, sz, safe)
+#define quotestr(urlstr, safe) quote(urlstr, strlen(urlstr),safe)
 
 #define unquotebuff(urlstr, sz) unquote(urlstr, sz)
 #define unquotestr(urlstr) unquote(urlstr, strlen(urlstr))
@@ -14,7 +14,7 @@
 extern "C"{
 #endif
 
-extern char* quote(const uchar* urlstr, uint sz) ;
+extern char* quote(const uchar* urlstr, uint sz, const char *safe) ;
 extern uchar* unquote(const char* urlstr, uint sz) ; 
 
 extern char *urlencode(const char *str) ;

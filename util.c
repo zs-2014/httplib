@@ -147,7 +147,7 @@ const char *casefind(const char *src, const char *needle)
 
 int sendData(int fd, const void *buff, int sz)
 {
-    if(fd < 0 || buff == NULL|| sz)
+    if(fd < 0 || buff == NULL|| sz == 0)
     {
         return 0 ;
     }
@@ -162,6 +162,10 @@ int sendData(int fd, const void *buff, int sz)
         }
         else if(ret < 0)
         {
+            if(errno == EINTR)
+            {
+                continue ;
+            }
            return nSend ; 
         }
         else
@@ -172,7 +176,37 @@ int sendData(int fd, const void *buff, int sz)
     return nSend ;
 }
 
-#if 1
+int readFully(int fd, void *buff, int sz)
+{
+    if(fd < 0 || buff == NULL || sz == 0) 
+    {
+        return 0 ;
+    }
+    int nRecv = 0 ;
+    int ret = 0 ;
+    while((ret = read(fd, ((char *)buff) + nRecv, sz - nRecv)) != 0)
+    {
+        if(ret + nRecv == sz) 
+        {
+            return sz ;
+        }
+        else if(ret > 0 )
+        {
+           nRecv += ret ; 
+        }
+        else
+        {
+            if(errno == EINTR)
+            {
+                continue ;
+            }
+            return nRecv ;
+        }
+    }
+    return nRecv ;
+}
+
+#if 0
 int main(int argc,char *argv[])
 {
     int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;

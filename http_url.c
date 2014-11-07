@@ -226,10 +226,10 @@ static int checkURL(const URL *pUrl)
        }
     }
     
-    if(pUrl ->path != NULL && strlen(pUrl ->path) == 0)
-    {
-        return -1 ;
-    }
+    //if(pUrl ->path != NULL && strlen(pUrl ->path) == 0)
+    //{
+     //   return -1 ;
+    //}
     
     if(pUrl ->query != NULL && strlen(pUrl ->query) == 0)
     {
@@ -256,7 +256,9 @@ URL* parseURL(const char *pUrlStr)
         return NULL ;
     }
     memset(pUrl, 0, sizeof(URL)) ;
-    pUrl ->urlbuff = (char *)unquotestr(pUrlStr) ;
+    char *tmp = (char *)unquotestr(pUrlStr) ;
+    pUrl ->urlbuff = quotestr(tmp, ":/?#=") ;   
+    FREE(tmp) ;
     if(pUrl ->urlbuff == NULL)
     {
         goto _fails;
@@ -306,7 +308,7 @@ int printURL(const URL *pUrl)
             pUrl ->protocol, pUrl ->host,pUrl ->port, pUrl ->path, pUrl ->param, pUrl ->query, pUrl ->frag) ;
 }
 
-#if 1
+#if 0 
 
 int main(int argc, char *argv[])
 {

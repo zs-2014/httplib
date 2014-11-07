@@ -337,7 +337,7 @@ int printCookie(COOKIE *cookie)
     return 0 ;
 }
 
-#if 1
+#if 0
 void updateTest()
 {
     COOKIE cookie ;
