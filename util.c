@@ -145,6 +145,35 @@ const char *casefind(const char *src, const char *needle)
     return NULL ;
 }
 
+char *itoa(int num, char *buff)
+{
+    if(buff == NULL) 
+    {
+        return NULL ;
+    }
+    char *tmpBuff = buff ;
+    char *tmpBuff1 = buff ;
+    if(num < 0)
+    {
+        *tmpBuff++ = '-' ;
+        num = 0 - num ;
+    }
+    do
+    {
+       *tmpBuff++ = num%10 + '0'; 
+       num = num/10 ;
+    }while(num != 0) ;
+    *tmpBuff = '\0' ;
+    while(tmpBuff1 < --tmpBuff)
+    {
+        char c = *tmpBuff ;
+        *tmpBuff = *tmpBuff1 ;
+        *tmpBuff1 = c ;
+        tmpBuff1++ ;
+    }
+    return buff ;
+}
+
 int sendData(int fd, const void *buff, int sz)
 {
     if(fd < 0 || buff == NULL|| sz == 0)
@@ -206,7 +235,56 @@ int readFully(int fd, void *buff, int sz)
     return nRecv ;
 }
 
-#if 0
+int readUntil(int fd, void *buff, int sz, int *len, const char *flagstr)
+{
+    if(fd < 0 || buff == NULL || sz <= 0 || len == NULL) 
+    {
+        return 0 ;
+    }
+    char *tmpBuff = (char *)buff ;
+    int nRecv = 0 ;
+    int ret = 0 ;
+    while((ret = read(fd, tmpBuff + nRecv, sz - nRecv - 1)) != 0)
+    {
+        if(ret + nRecv == sz - 1) 
+        {
+            tmpBuff[sz - 1] = '\0' ;  
+            char *p = strstr(tmpBuff + nRecv, flagstr) ;
+            if(p != NULL)
+            {
+                *len = p - tmpBuff + strlen(flagstr);
+            }
+            else
+            {
+                *len = 0 ;
+            }
+            return sz - 1 ; 
+        }
+        else if(ret > 0 )
+        {
+            tmpBuff[nRecv + ret] = '\0' ;
+            char *p = strstr(tmpBuff + nRecv, flagstr) ;
+            nRecv += ret ; 
+            if(p != NULL)
+            {
+                *len = p - tmpBuff + strlen(flagstr); 
+                return nRecv ;
+            }
+        }
+        else
+        {
+            if(errno == EINTR)
+            {
+                continue ;
+            }
+            return nRecv ;
+        }
+    }
+    *len = 0 ;
+    return nRecv ;
+}
+
+#if 1
 int main(int argc,char *argv[])
 {
     int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;
@@ -214,7 +292,9 @@ int main(int argc,char *argv[])
     char buff[] = {"GET / HTTP/1.1\r\nContent-Type:plain/text\r\nUser-Agent:curlib2.7\r\n\r\n"} ; 
     printf("write = %d\n", write(fd,buff, strlen(buff))) ;
     char readbuff[64*1024] = {0} ;
-    printf("read = %d\n", read(fd, readbuff, sizeof(readbuff)-1)) ;
+    int len = 0 ;
+    int total = readUntil(fd, readbuff, sizeof(readbuff)-1, &len, "\r\n\r\n") ;
+    printf("len = [%d]\ntotal=%d\n", len, total) ;
     printf("%s\n", readbuff) ;
     close(fd) ;
     perror("error msg") ;

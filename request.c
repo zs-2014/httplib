@@ -193,11 +193,108 @@ int sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
     char buff1[2048] = {0};
     readFully(fd, buff1 ,sizeof(buff1) - 1) ;
     printf("recv:[%s]\n", buff1) ;
+    close(fd) ;
+}
+
+static int calcDataLen(DATA *data)
+{
+    int total = 0 ;
+    FOREACH(key, val, data) 
+    {
+        //total += strlen(key) + strlen("=") + strlen(val) + strlen("&")
+        total += strlen(key) + 1 ;
+        if(val != NULL)
+        {
+            total += strlen(val) ;
+        }
+        total += 1 ;
+    }
+    return total - 1;
 }
 
 int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 {
-    return 0 ; 
+    if(httpreq == NULL || httpreq ->url == NULL) 
+    {
+        return -1 ;
+    }
+    URL *url = httpreq ->url ;
+    int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
+    if(fd < 0)
+    {
+       return -1; 
+    }
+    //开始拼凑请求头
+    BUFFER buff ;
+    initBuffer(&buff) ;
+    appendBuffer(&buff, STR_POST, STR_POST_LEN) ;
+    appendBuffer(&buff, " /", strlen(" /")) ;
+    if(url ->path != NULL && strlen(url ->path) != 0)
+    {
+        appendBuffer(&buff, url ->path, strlen(url ->path)) ;
+    }
+    lstripBuffer(&buff, '?') ;
+    if(url ->query != NULL && strlen(url ->query) != 0)
+    {
+        appendBuffer(&buff, url ->query, strlen(url ->query)) ;
+        appendBuffer(&buff, "&", 1) ;
+    }
+    appendBuffer(&buff, " ", 1) ;
+    //method path version \r\n
+    appendBuffer(&buff, "HTTP/", 5) ;
+    appendBuffer(&buff, httpreq ->version, strlen(httpreq ->version)) ;
+    appendBuffer(&buff, "\r\n", 2) ; 
+    int total = 0 ;
+    total = calcDataLen(&httpreq ->data) ;
+    if(total != 0)
+    {
+        char length[20] = {0};
+        addRequestHeader(httpreq, "Content-Length", itoa(total, length)) ;
+        addRequestHeader(httpreq, "Content-Type", "application/x-www-form-urlencoded") ;
+    }
+    addDefaultRequestHeader(httpreq) ;    
+    appendBuffer(&buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
+    appendBuffer(&buff, "\r\n", 2) ;
+
+    if(!isEmpty(&httpreq ->data))
+    {
+        FOREACH(key, val, &httpreq ->data)
+        {
+            appendBuffer(&buff, key, strlen(key)) ;
+            appendBuffer(&buff, "=", 1) ;
+            if(val != NULL)
+            {
+                appendBuffer(&buff, val, strlen(val)) ;
+            }
+            appendBuffer(&buff, "&", 1) ;
+        }
+        lstripBuffer(&buff, '&') ;
+    }
+    if(sendData(fd, getBufferData(&buff), getBufferSize(&buff)) != getBufferSize(&buff))
+    {
+        printf("send [%s] fail\n", getBufferData(&buff)) ;
+    }
+    HTTPRESPONSE *rsp = initHttpResponse(MALLOC(sizeof(HTTPRESPONSE))) ;
+    if(rsp == NULL)
+    {
+        printf("fail to create response object:%s\n", strerror(errno)) ;
+        return NULL ;
+    }
+    char hdrBuff[64*1024] = {0} ;
+    int hdrLen = 0 ;
+    int total = readUntil(fd, hdrBuff, sizeof(hdrBuff), &hdrLen, "\r\n\r\n") ;
+    if(hdrLen == 0)
+    {
+        printf("too big http response header\n") ;
+        return NULL ;
+    }
+    //if(parseHttpResponseHeader(&rsp ->httphdr, hdrBuff) == ) 解析收到的http响应头
+    if(total > hdrLen)
+    {
+       //剩余的数据添加到结构的body中 
+    }
+    //返回响应对象
+    return rsp ; 
 }
 
 int sendRequest(HTTPREQUEST *httpreq, int timeout)
@@ -228,12 +325,12 @@ int main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http%3A//www.baidu.com/index.html?test=测试") ;
-    addRequestData(&request, "name", strlen("name"), "zs", strlen("zs")) ;
-    addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
-    addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
+    setHttpRequestUrl(&request,"http://172.100.102.153:9393/merchant/v1/login") ;
+    addRequestData(&request, "username", strlen("username"), "15110256548", strlen("15110256548")) ;
+    addRequestData(&request, "password", strlen("password"), "256548", strlen("256548")) ;
+    //addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
 
-    sendRequestWithGET(&request, -1) ;
+    sendRequestWithPOST(&request, -1) ;
     freeHttpRequest(&request) ;
     return 0 ;
 }

@@ -9,6 +9,19 @@
 #define VERSION(m, n) (((m)-'0')*10 + (n) - '0')
 #define MIN_VERSION VERSION('1', '0') 
 
+int initHttpResponseHeader(HttpResponseHeader *httprsphdr)
+{
+    if(httprsphdr == NULL)
+    {
+        return -1 ;
+    }
+    memset(httprsphdr, 0, sizeof(*httprsphdr)) ;
+    httprsphdr ->hdrbuff = NULL ;
+    httprsphdr ->size = 0 ;
+    httprsphdr ->key_val = NULL ;
+    return 0 ;
+}
+
 int freeHttpResponseHeader(HttpResponseHeader * httphdr)
 {
     if(!httphdr)
@@ -26,8 +39,8 @@ int freeHttpResponseHeader(HttpResponseHeader * httphdr)
         FREE(httphdr ->key_val) ;
         httphdr ->key_val = NULL ;
     }
-    FREE(httphdr) ;
-    httphdr = NULL ;
+    //FREE(httphdr) ;
+    //httphdr = NULL ;
     return 0 ;
 }
 
@@ -108,29 +121,6 @@ int parseStatusLine(HttpResponseHeader *httphdr ,const char *hdrbuff)
     p += COPY_FIELD(p, " ", httphdr ->code,    sizeof(httphdr ->code)) ; 
     p += COPY_FIELD(p, "\r\n", httphdr ->reason, sizeof(httphdr ->reason)) ;
     return p - hdrbuff ;
-    //char *version_b = hdrbuff ;
-    //char *version_e = strchr(version_b, ' ') ;
-    //if (version_b <= version_e || version_e - version_b >= sizeof(httphdr ->version))
-    //{
-    //    return -1 ;
-    //}
-    //strncpy(httphdr ->version, version_b ,version_e - version_b) ;
-
-    //char *code_b = version_e + 1 ;
-    //char *code_e = strchr(code_b) ;
-    //if(code_b <= code_e || code_e - code_b >= sizeof(httphdr ->code))
-    //{
-    //    return -1 ;
-    //}
-    //strncpy(httphdr ->code, code_b, code_e - code_b) ;
-    //char *reason_b = code_e + 1 ;
-    //char *reason_e = strstr(reason_b, "\r\n") ;
-    //if(reason_e <= reason_b || reason_e - reason_b >= sizeof(httphdr ->reason_b))
-    //{
-    //    return -1 ;
-    //}
-    //strncpy(httphdr ->reason, reason_b, reason_e - reason_e) ;
-    //return reason_e - version_b + 2 ;//"\r\n"
 }
 
 static char *deleteContinueLineFlag(char *hdrbuff)
@@ -258,9 +248,50 @@ HttpResponseHeader *parseHttpResponseHeader(const char *hdrbuff)
     return httphdr ;
 _fails:
     freeHttpResponseHeader(httphdr) ;
+    FREE(httphdr) ;
+    httphdr = NULL ;
     return NULL ;
 }
 
+HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
+{
+   if(httprsp == NULL) 
+   {
+        return -1 ;
+   }
+   httprsp ->rspfd = -1 ;
+   initHttpResponseHeader(&httprsp ->httprsphdr) ;
+   return httprsphdr ;
+}
+
+int setResponseSocket(HTTPRESPONSE *httprsp, int sockfd)
+{
+    if(httprsp == NULL || sockfd < 0)
+    {
+        return -1 ;
+    }
+    httprsp ->rspfd = sockfd ;
+    return 0 ;
+}
+
+int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
+{
+    if(httprsp == NULL || buff == NULL || sz <= 0 || httprsp ->rspfd < 0)
+    {
+        return 0 ;
+    }
+   
+}
+
+int readResponseFully(HTTPRESPONSE *httprsp, void *buff, int sz)
+{
+    if(httprsp == NULL || buff == NULL || sz <= 0 || httprsp ->rspfd < 0)
+    {
+        return 0 ;
+    }
+}
+
+#if 1
 void printHttpResponseHeader(HttpResponseHeader *httphdr)
 {
     if(!httphdr)
@@ -274,7 +305,6 @@ void printHttpResponseHeader(HttpResponseHeader *httphdr)
        printf("%s:%s\n", httphdr ->key_val[i].key, httphdr ->key_val[i].value) ; 
     }
 }
-#if 1
 int main(int argc, char *argv[])
 {
     char buff[] = "HTTP/1.2 200 OK\r\nkey1:value1\r\nkey2:value2\r\nkey3:values,123\r\n\r\n" ;

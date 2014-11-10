@@ -1,19 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "http_url.h"
+#include  "util.h"
 int main(int argc, char *argv[])
 {
-    init() ;
-    if(argc != 2)
-    {
-        printf("please input the string you want to test\n") ;
-        return -1 ;
-    }
-    char *p1 = quotestr(argv[1]) ;
-    uchar *p2 = unquotestr(argv[1]) ;
-    printf("before:%s\nafter:%s\nunquote = %s\n",argv[1], p1, p2) ;
-    free(p1) ;
-    free(p2) ;
+    char buff[20] ;
+    printf("itoa = %s\n",itoa(123, buff)) ;
+    printf("itoa = %s\n", itoa(1234, buff)) ;
+    printf("itoa = %s\n", itoa(0, buff)) ;
     return 0 ;
 }

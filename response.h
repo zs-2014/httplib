@@ -18,11 +18,16 @@ typedef struct HttpResponseHeader
 	NODE *key_val ;
 }HttpResponseHeader;
 
-
+typedef struct HTTPRESPONSE
+{
+   HttpResponseHeader rsphdr ;
+   int rspfd ;
+}HTTPRESPONSE ;
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
+extern HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp) ;
 extern HttpResponseHeader* parseHttpResponseHeader(const char *hdrbuff) ;
 #ifdef __cplusplus
 };
