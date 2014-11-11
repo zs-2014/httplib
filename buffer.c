@@ -91,7 +91,7 @@ BUFFER *lstripBuffer(BUFFER *buff, uchar ch)
 
 const uchar* getBufferData(const BUFFER *buff)
 {
-    return buff != NULL ? (buff ->currSz == 0 ? "" : buff ->buff) : "" ;
+    return buff != NULL ? (buff ->currSz == 0 ? (uchar *)nullStrPtr : buff ->buff) : (uchar *)nullStrPtr ;
 }
 
 uint getBufferSize(const BUFFER *buff) 

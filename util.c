@@ -234,69 +234,77 @@ int readFully(int fd, void *buff, int sz)
     }
     return nRecv ;
 }
-
-int readUntil(int fd, void *buff, int sz, int *len, const char *flagstr)
+char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
 {
-    if(fd < 0 || buff == NULL || sz <= 0 || len == NULL) 
+    if(fd < 0 || totalLen == NULL || len == NULL) 
     {
-        return 0 ;
+        return NULL ;
     }
-    char *tmpBuff = (char *)buff ;
+
+#define BUFF_GROW_SIZE 512 
+
+    char *buff = (char *)CALLOC(1, BUFF_GROW_SIZE + 1) ; 
+    int sz = BUFF_GROW_SIZE;
+    if(buff == NULL)
+    {
+        return NULL ;
+    }
     int nRecv = 0 ;
     int ret = 0 ;
-    while((ret = read(fd, tmpBuff + nRecv, sz - nRecv - 1)) != 0)
+    while((ret = read(fd, buff + nRecv, sz - nRecv)) != 0) 
     {
-        if(ret + nRecv == sz - 1) 
-        {
-            tmpBuff[sz - 1] = '\0' ;  
-            char *p = strstr(tmpBuff + nRecv, flagstr) ;
+       if(ret > 0) 
+       {
+            buff[ret + nRecv] = '\0' ;
+            char *p = strstr(buff + nRecv, flagstr) ;
+            nRecv += ret ;
             if(p != NULL)
             {
-                *len = p - tmpBuff + strlen(flagstr);
+                *len = p - buff + strlen(flagstr) ;
+                *totalLen = nRecv ;
+                return buff ;
             }
-            else
+            else if(p == NULL && nRecv == sz) 
             {
-                *len = 0 ;
+                buff = (char *)REALLOC(buff, sz + BUFF_GROW_SIZE + 1) ;
+                if(buff == NULL)
+                {
+                    FREE(buff) ;
+                    return NULL ;
+                }
+                sz = sz + BUFF_GROW_SIZE;
+                continue ;
             }
-            return sz - 1 ; 
-        }
-        else if(ret > 0 )
-        {
-            tmpBuff[nRecv + ret] = '\0' ;
-            char *p = strstr(tmpBuff + nRecv, flagstr) ;
-            nRecv += ret ; 
-            if(p != NULL)
-            {
-                *len = p - tmpBuff + strlen(flagstr); 
-                return nRecv ;
-            }
-        }
-        else
-        {
-            if(errno == EINTR)
+       }
+       else
+       {
+            if(errno == EINTR) 
             {
                 continue ;
             }
-            return nRecv ;
-        }
+            break ;
+       }
     }
+    FREE(buff) ;
     *len = 0 ;
-    return nRecv ;
+    *totalLen = 0 ;
+    return NULL ;
 }
 
-#if 1
+#if 1 
 int main(int argc,char *argv[])
 {
     int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;
     printf("%d\n", fd)  ;
     char buff[] = {"GET / HTTP/1.1\r\nContent-Type:plain/text\r\nUser-Agent:curlib2.7\r\n\r\n"} ; 
     printf("write = %d\n", write(fd,buff, strlen(buff))) ;
-    char readbuff[64*1024] = {0} ;
     int len = 0 ;
-    int total = readUntil(fd, readbuff, sizeof(readbuff)-1, &len, "\r\n\r\n") ;
+    int total ;
+    char *bff = readUntil(fd, &total, &len, "\r\n\r\n") ;
     printf("len = [%d]\ntotal=%d\n", len, total) ;
-    printf("%s\n", readbuff) ;
+    printf("%s\n", bff) ;
     close(fd) ;
+    FREE(bff) ;
     perror("error msg") ;
 	return 0 ;
 }

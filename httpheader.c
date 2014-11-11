@@ -144,7 +144,7 @@ int updateHeader(HEADER *httphdr, const char *key, const char *newValue)
 
 const char *header2String(HEADER *httphdr) 
 {
-    return httphdr != NULL ? (httphdr ->currSz == 0 ? "" : httphdr ->hdrBuff) : "" ;
+    return httphdr != NULL ? (httphdr ->currSz == 0 ? nullStrPtr : httphdr ->hdrBuff) : nullStrPtr ;
 }
 uint headerLen(HEADER *httphdr)
 {

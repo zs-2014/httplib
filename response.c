@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "response.h"
 #include "util.h"
 #include "global.h"
@@ -9,6 +10,7 @@
 #define VERSION(m, n) (((m)-'0')*10 + (n) - '0')
 #define MIN_VERSION VERSION('1', '0') 
 
+//初始化http 响应头
 int initHttpResponseHeader(HttpResponseHeader *httprsphdr)
 {
     if(httprsphdr == NULL)
@@ -16,15 +18,16 @@ int initHttpResponseHeader(HttpResponseHeader *httprsphdr)
         return -1 ;
     }
     memset(httprsphdr, 0, sizeof(*httprsphdr)) ;
-    httprsphdr ->hdrbuff = NULL ;
+    httprsphdr ->headbuff = NULL ;
     httprsphdr ->size = 0 ;
     httprsphdr ->key_val = NULL ;
     return 0 ;
 }
 
+//释放http响应头
 int freeHttpResponseHeader(HttpResponseHeader * httphdr)
 {
-    if(!httphdr)
+    if(httphdr == NULL)
     {
         return 0 ;
     }
@@ -39,12 +42,11 @@ int freeHttpResponseHeader(HttpResponseHeader * httphdr)
         FREE(httphdr ->key_val) ;
         httphdr ->key_val = NULL ;
     }
-    //FREE(httphdr) ;
-    //httphdr = NULL ;
     return 0 ;
 }
 
-int checkVersion(HttpResponseHeader *httphdr)
+//检查响应的http版本是否正确
+static int checkVersion(HttpResponseHeader *httphdr)
 {
     if(httphdr == NULL)
     {
@@ -67,7 +69,8 @@ int checkVersion(HttpResponseHeader *httphdr)
     return 0 ;
 }
 
-int checkCode(HttpResponseHeader * httphdr)
+//检查http响应状态码是否合法
+static int checkCode(HttpResponseHeader * httphdr)
 {
     if(httphdr == NULL)
     {
@@ -81,7 +84,8 @@ int checkCode(HttpResponseHeader * httphdr)
     return 0;
 }
 
-int checkReason(HttpResponseHeader *httphdr)
+//检查http 返回状态信息
+static int checkReason(HttpResponseHeader *httphdr)
 {
     if(httphdr == NULL)
     {
@@ -90,7 +94,8 @@ int checkReason(HttpResponseHeader *httphdr)
     return 0;
 }
 
-int checkStatusLine(HttpResponseHeader *httphdr)
+//检查http响应的第一行
+static int checkStatusLine(HttpResponseHeader *httphdr)
 {
     if(httphdr == NULL)
     {
@@ -110,7 +115,8 @@ int checkStatusLine(HttpResponseHeader *httphdr)
     end - beg + strlen(delimit) ;\
 })
 
-int parseStatusLine(HttpResponseHeader *httphdr ,const char *hdrbuff)
+//解析http响应的第一行  比如 HTTP/1.1 200 OK
+static int parseStatusLine(HttpResponseHeader *httphdr ,const char *hdrbuff)
 {
     if(hdrbuff == NULL || httphdr == NULL)
     {
@@ -123,6 +129,7 @@ int parseStatusLine(HttpResponseHeader *httphdr ,const char *hdrbuff)
     return p - hdrbuff ;
 }
 
+//删除http响应行中续行，并把所有的续行合并成一行
 static char *deleteContinueLineFlag(char *hdrbuff)
 {
     if(hdrbuff == NULL)
@@ -154,25 +161,29 @@ static char *deleteContinueLineFlag(char *hdrbuff)
     return NULL;
 }
 
-int parseKeyValue(HttpResponseHeader *httphdr)
+//解析http响应头中的名称/值对
+static int parseKeyValue(HttpResponseHeader *httphdr)
 { 
     if(httphdr == NULL)
     {
         return -1 ;
     }
+    //跳过首行
     char *p = strstr(httphdr ->headbuff, "\r\n") ;
     if(p == NULL) 
     {
         return -1 ;
     }
-    p += 2;
+    p += 2 ;
     while(*p != '\0')
     {
         char *key_b = p ;
+        //名称与键之间 以 : 隔开
         char *key_e = strchr(key_b, ':');
         if(key_e != NULL)
         {
             char *val_b = key_e + 1 ; 
+            //此行的结束
             char *val_e = strstr(val_b, "\r\n");
             if(val_e == NULL)
             {
@@ -193,6 +204,7 @@ int parseKeyValue(HttpResponseHeader *httphdr)
             httphdr ->key_val[httphdr ->count].key = key_b ;
             httphdr ->key_val[httphdr ->count++].value = val_b ;
         }
+        //http 解析完毕  \r\n标志着结束
         else if(key_e == NULL && strcmp(key_b, "\r\n") == 0)
         {
             return 0 ;
@@ -205,22 +217,14 @@ int parseKeyValue(HttpResponseHeader *httphdr)
     return -1 ;
 }
 
-HttpResponseHeader *parseHttpResponseHeader(const char *hdrbuff)
+//解析httprsp中hdr中的http响应头
+int parseHttpResponseHeader(HTTPRESPONSE *httprsp)
 {
-    if(hdrbuff == NULL)
+    if(httprsp == NULL)
     {
-        return NULL ;
+        return -1;
     }
-    HttpResponseHeader *httphdr = (HttpResponseHeader *)MALLOC(sizeof(HttpResponseHeader)) ;
-    if(httphdr == NULL)
-    {
-        return NULL ;
-    }
-    httphdr ->headbuff = strdup(hdrbuff) ;
-    if(httphdr ->headbuff == NULL)
-    {
-        goto _fails ;
-    }
+    HttpResponseHeader *httphdr = &httprsp ->httprsphdr ; 
     deleteContinueLineFlag(httphdr ->headbuff) ;
     // 第一次分配100个键值对
     httphdr ->key_val = (NODE *)MALLOC(sizeof(NODE)*30) ;
@@ -245,23 +249,51 @@ HttpResponseHeader *parseHttpResponseHeader(const char *hdrbuff)
     {
         goto _fails ;
     }
-    return httphdr ;
+    return 0;
 _fails:
     freeHttpResponseHeader(httphdr) ;
-    FREE(httphdr) ;
-    httphdr = NULL ;
-    return NULL ;
+    return -1;
 }
 
+//初始化一个http响应对象
 HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
+{
+   if(httprsp == NULL) 
+   {
+        return NULL ;
+   }
+   httprsp ->rspfd = -1 ;
+   initHttpResponseHeader(&httprsp ->httprsphdr) ;
+   return httprsp ;
+}
+
+//设置http响应对象中头缓冲
+//当isCopy 为False时 hdrbuff必须是malloc分配最终由http释放
+//isCopy == True 从hdrbuff中拷贝一份
+int setResponseHeaderBuff(HTTPRESPONSE *httprsp, char *hdrbuff, int isCopy)
+{
+   if(httprsp == NULL || hdrbuff == NULL) 
+   {
+        return -1 ;
+   }
+   if(isCopy == 0)
+   {
+        httprsp ->httprsphdr ->headbuff = hdrbuff ;
+   }   
+   else
+   {
+        httprsp ->httprsphdr ->headbuff = strdup(hdrbuff) ;
+   }
+   return httprsp ->httprsphdr ->headbuff == NULL ? -1 : 0 ;
+}
+
+int parseHttpResponseHeader(HTTPRESPONSE *httprsp)
 {
    if(httprsp == NULL) 
    {
         return -1 ;
    }
-   httprsp ->rspfd = -1 ;
-   initHttpResponseHeader(&httprsp ->httprsphdr) ;
-   return httprsphdr ;
+
 }
 
 int setResponseSocket(HTTPRESPONSE *httprsp, int sockfd)
@@ -291,7 +323,7 @@ int readResponseFully(HTTPRESPONSE *httprsp, void *buff, int sz)
     }
 }
 
-#if 1
+#if 0 
 void printHttpResponseHeader(HttpResponseHeader *httphdr)
 {
     if(!httphdr)
@@ -308,9 +340,13 @@ void printHttpResponseHeader(HttpResponseHeader *httphdr)
 int main(int argc, char *argv[])
 {
     char buff[] = "HTTP/1.2 200 OK\r\nkey1:value1\r\nkey2:value2\r\nkey3:values,123\r\n\r\n" ;
-    HttpResponseHeader *hdr = parseHttpResponseHeader(buff) ;
-    printHttpResponseHeader(hdr) ;
-    freeHttpResponseHeader(hdr) ;
+    HttpResponseHeader hdr ;
+    initHttpResponseHeader(&hdr) ;
+    if(parseHttpResponseHeader(&hdr, buff) == 0)
+    {
+        printHttpResponseHeader(&hdr) ;
+        freeHttpResponseHeader(&hdr) ;
+    }
     return 0 ;
 }
 #endif

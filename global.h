@@ -16,7 +16,7 @@ typedef unsigned int uint ;
 typedef unsigned char uchar ;
 
 
-
+static char *nullStrPtr = "" ; 
 #ifdef __cplusplus
 extern "C"{
 #endif 

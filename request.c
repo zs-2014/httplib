@@ -135,18 +135,18 @@ static int addDefaultRequestHeader(HTTPREQUEST *httpreq)
     return 0 ;
 }
 
-int sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
+HTTPRESPONSE *sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
 {
     if(httpreq == NULL || httpreq ->url == NULL) 
     {
-        return -1 ;
+        return NULL ;
     }
     addDefaultRequestHeader(httpreq) ;    
     URL *url = httpreq ->url ;
     int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
     if(fd < 0)
     {
-       return -1; 
+       return NULL; 
     }
     //开始拼凑请求头
     BUFFER buff ;
@@ -212,17 +212,28 @@ static int calcDataLen(DATA *data)
     return total - 1;
 }
 
-int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
+static HTTPRESPONSE *getResponse(int fd)
+{
+    int totalLen = 0 ;
+    int hdrLen = 0 ;
+    char *hdrbuff = readUntil(fd, &totalLen, &hdrLen, "\t\n") ;
+    if(hdrbuff == NULL)
+    {
+        return NULL ;
+    } 
+}
+
+HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 {
     if(httpreq == NULL || httpreq ->url == NULL) 
     {
-        return -1 ;
+        return NULL ;
     }
     URL *url = httpreq ->url ;
     int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
     if(fd < 0)
     {
-       return -1; 
+       return NULL; 
     }
     //开始拼凑请求头
     BUFFER buff ;
@@ -277,12 +288,12 @@ int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
     HTTPRESPONSE *rsp = initHttpResponse(MALLOC(sizeof(HTTPRESPONSE))) ;
     if(rsp == NULL)
     {
-        printf("fail to create response object:%s\n", strerror(errno)) ;
-        return NULL ;
+        //printf("fail to create response object:%s\n", strerror(errno)) ;
+        //return NULL ;
     }
     char hdrBuff[64*1024] = {0} ;
     int hdrLen = 0 ;
-    int total = readUntil(fd, hdrBuff, sizeof(hdrBuff), &hdrLen, "\r\n\r\n") ;
+    total = readUntil(fd, hdrBuff, sizeof(hdrBuff), &hdrLen, "\r\n\r\n") ;
     if(hdrLen == 0)
     {
         printf("too big http response header\n") ;
@@ -297,11 +308,11 @@ int sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
     return rsp ; 
 }
 
-int sendRequest(HTTPREQUEST *httpreq, int timeout)
+HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int timeout)
 {
     if(httpreq == NULL || httpreq ->url == NULL)
     {
-        return -1 ;
+        return NULL ;
     }
 
     if(httpreq ->method == GET)

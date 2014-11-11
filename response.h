@@ -1,6 +1,8 @@
 #ifndef __RESPONSE__H
 #define __RESPONSE__H
 
+#include "global.h"
+
 typedef struct Node
 {
 	char *value ;
@@ -20,16 +22,20 @@ typedef struct HttpResponseHeader
 
 typedef struct HTTPRESPONSE
 {
-   HttpResponseHeader rsphdr ;
+   HttpResponseHeader httprsphdr ;
    int rspfd ;
 }HTTPRESPONSE ;
+
 #ifdef __cplusplus
-extern "C" 
-{
+extern "C"{
 #endif
+
+extern int setResponseHeaderBuff(HTTPRESPONSE *httprsp, char *hdrbuff) ;
+extern int parseHttpResponseHeader(HTTPRESPONSE *httprsp) ;
 extern HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp) ;
-extern HttpResponseHeader* parseHttpResponseHeader(const char *hdrbuff) ;
+
 #ifdef __cplusplus
-};
+}
 #endif
+
 #endif
