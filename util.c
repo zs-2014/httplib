@@ -261,6 +261,7 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
             if(p != NULL)
             {
                 *len = p - buff + strlen(flagstr) ;
+                p[strlen(flagstr)] = '\0' ;
                 *totalLen = nRecv ;
                 return buff ;
             }
@@ -291,7 +292,7 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
     return NULL ;
 }
 
-#if 1 
+#if 0 
 int main(int argc,char *argv[])
 {
     int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;

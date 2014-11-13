@@ -244,12 +244,13 @@ int parseHttpResponseHeader(HTTPRESPONSE *httprsp)
     {
         goto _fails ;
     }
-    
     if(parseKeyValue(httphdr) != 0)
     {
+        printf("fail to parse key and value\n") ;
         goto _fails ;
     }
-    return 0;
+    return 0 ;
+
 _fails:
     freeHttpResponseHeader(httphdr) ;
     return -1;
@@ -263,8 +264,37 @@ HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
         return NULL ;
    }
    httprsp ->rspfd = -1 ;
+   httprsp ->extraData = NULL ;
+   httprsp ->extraSize = 0 ;
    initHttpResponseHeader(&httprsp ->httprsphdr) ;
    return httprsp ;
+}
+
+int setResponseExtraData(HTTPRESPONSE *httprsp, char *extraData, int sz)
+{ 
+    if(httprsp == NULL || extraData == NULL)
+    {
+        return -1 ;
+    }
+    httprsp ->extraData = extraData ;
+    httprsp ->extraSize = sz ;
+    return 0 ;
+}
+
+int freeHttpResponse(HTTPRESPONSE *httprsp)
+{
+    if(httprsp == NULL)    
+    {
+        return -1 ;
+    }
+    if(httprsp ->rspfd >= 0 )
+    {
+        close(httprsp ->rspfd) ;
+    }
+    httprsp ->rspfd = -1 ;
+    httprsp ->extraData = NULL ;
+    httprsp ->extraSize = 0 ;
+    return freeHttpResponseHeader(&httprsp ->httprsphdr) ;
 }
 
 //设置http响应对象中头缓冲
@@ -278,22 +308,13 @@ int setResponseHeaderBuff(HTTPRESPONSE *httprsp, char *hdrbuff, int isCopy)
    }
    if(isCopy == 0)
    {
-        httprsp ->httprsphdr ->headbuff = hdrbuff ;
+        httprsp ->httprsphdr.headbuff = hdrbuff ;
    }   
    else
    {
-        httprsp ->httprsphdr ->headbuff = strdup(hdrbuff) ;
+        httprsp ->httprsphdr.headbuff = strdup(hdrbuff) ;
    }
-   return httprsp ->httprsphdr ->headbuff == NULL ? -1 : 0 ;
-}
-
-int parseHttpResponseHeader(HTTPRESPONSE *httprsp)
-{
-   if(httprsp == NULL) 
-   {
-        return -1 ;
-   }
-
+   return httprsp ->httprsphdr.headbuff == NULL ? -1 : 0 ;
 }
 
 int setResponseSocket(HTTPRESPONSE *httprsp, int sockfd)
@@ -312,7 +333,6 @@ int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
     {
         return 0 ;
     }
-   
 }
 
 int readResponseFully(HTTPRESPONSE *httprsp, void *buff, int sz)
@@ -339,10 +359,10 @@ void printHttpResponseHeader(HttpResponseHeader *httphdr)
 }
 int main(int argc, char *argv[])
 {
-    char buff[] = "HTTP/1.2 200 OK\r\nkey1:value1\r\nkey2:value2\r\nkey3:values,123\r\n\r\n" ;
+    char buff[] = "HTTP/1.2 200 OK\r\nkey1: value1\r\nkey2:value2\r\nkey3:values,123\r\n\r\n" ;
     HttpResponseHeader hdr ;
     initHttpResponseHeader(&hdr) ;
-    if(parseHttpResponseHeader(&hdr, buff) == 0)
+    if(parseHttpResponseHeader(&hdr) == 0)
     {
         printHttpResponseHeader(&hdr) ;
         freeHttpResponseHeader(&hdr) ;

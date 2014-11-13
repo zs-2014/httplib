@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h> 
 
 #include "response.h"
 #include "request.h"
@@ -135,67 +136,6 @@ static int addDefaultRequestHeader(HTTPREQUEST *httpreq)
     return 0 ;
 }
 
-HTTPRESPONSE *sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
-{
-    if(httpreq == NULL || httpreq ->url == NULL) 
-    {
-        return NULL ;
-    }
-    addDefaultRequestHeader(httpreq) ;    
-    URL *url = httpreq ->url ;
-    int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
-    if(fd < 0)
-    {
-       return NULL; 
-    }
-    //开始拼凑请求头
-    BUFFER buff ;
-    initBuffer(&buff) ;
-    appendBuffer(&buff, STR_GET, STR_GET_LEN) ;
-    appendBuffer(&buff, " /", strlen(" /")) ;
-    if(url ->path != NULL && strlen(url ->path) != 0)
-    {
-        appendBuffer(&buff, url ->path, strlen(url ->path)) ;
-    }
-    appendBuffer(&buff, "?", strlen("?")) ; 
-    if(url ->query != NULL && strlen(url ->query) != 0)
-    {
-        appendBuffer(&buff, url ->query, strlen(url ->query)) ;
-        appendBuffer(&buff, "&", 1) ;
-    }
-    if(!isEmpty(&httpreq ->data))
-    {
-        FOREACH(key, val, &httpreq ->data)
-        {
-            appendBuffer(&buff, key, strlen(key)) ;
-            appendBuffer(&buff, "=", 1) ;
-            if(val != NULL)
-            {
-                appendBuffer(&buff, val, strlen(val)) ;
-            }
-            appendBuffer(&buff, "&", 1) ;
-        }
-        lstripBuffer(&buff, '&') ;
-    }
-    lstripBuffer(&buff, '?') ;
-    //method path version \r\n
-    appendBuffer(&buff, " ", 1) ;
-    appendBuffer(&buff, "HTTP/", 5) ;
-    appendBuffer(&buff, httpreq ->version, strlen(httpreq ->version)) ;
-    appendBuffer(&buff, "\r\n", 2) ; 
-    appendBuffer(&buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
-    appendBuffer(&buff, "\r\n", 2) ;
-    if(sendData(fd, getBufferData(&buff), getBufferSize(&buff)) != getBufferSize(&buff))
-    {
-        printf("send [%s] fail\n", getBufferData(&buff)) ;
-    }
-    printf("send [%s] success\n", getBufferData(&buff)) ;
-    char buff1[2048] = {0};
-    readFully(fd, buff1 ,sizeof(buff1) - 1) ;
-    printf("recv:[%s]\n", buff1) ;
-    close(fd) ;
-}
-
 static int calcDataLen(DATA *data)
 {
     int total = 0 ;
@@ -216,133 +156,166 @@ static HTTPRESPONSE *getResponse(int fd)
 {
     int totalLen = 0 ;
     int hdrLen = 0 ;
-    char *hdrbuff = readUntil(fd, &totalLen, &hdrLen, "\t\n") ;
+    char *hdrbuff = readUntil(fd, &totalLen, &hdrLen, "\r\n\r\n") ;
     if(hdrbuff == NULL)
     {
         return NULL ;
-    } 
-}
-
-HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
-{
-    if(httpreq == NULL || httpreq ->url == NULL) 
+    }
+    printf("read header [%s]\n", hdrbuff) ;
+    HTTPRESPONSE *httprsp = initHttpResponse(MALLOC(sizeof(HTTPRESPONSE))) ;
+    if(httprsp == NULL)
     {
-        return NULL ;
+        printf("fail to create response object:%s\n", strerror(errno)) ;
+        goto __fails ; 
+    }
+    setResponseSocket(httprsp, fd) ;
+    setResponseHeaderBuff(httprsp, hdrbuff, 0) ; 
+    setResponseExtraData(httprsp, hdrbuff + hdrLen, totalLen - hdrLen) ;
+    int ret ; //= parseHttpResponseHeader(httprsp) ;
+    //printf("ret == %d\n", ret) ;
+    if(parseHttpResponseHeader(httprsp) != 0)
+    {
+        printf("fail to parse http response header\n") ;
+        printf("ret = %d\n", ret) ;
+        goto __fails ;
+    }
+    return httprsp ;
+
+__fails:
+   freeHttpResponse(httprsp) ; 
+   FREE(httprsp) ;
+   return NULL ;
+}
+static int makeHeader(HTTPREQUEST *httpreq, BUFFER *buff, int method)
+{
+    if(httpreq == NULL || httpreq ->url == NULL || buff == NULL) 
+    {
+        return -1;
     }
     URL *url = httpreq ->url ;
-    int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
-    if(fd < 0)
+     //开始拼凑请求头
+    if(method == POST)
     {
-       return NULL; 
+        appendBuffer(buff, STR_POST, STR_POST_LEN) ;
     }
-    //开始拼凑请求头
-    BUFFER buff ;
-    initBuffer(&buff) ;
-    appendBuffer(&buff, STR_POST, STR_POST_LEN) ;
-    appendBuffer(&buff, " /", strlen(" /")) ;
+    else
+    {
+        appendBuffer(buff, STR_GET, STR_GET_LEN) ;
+    }
+    appendBuffer(buff, " /", strlen(" /")) ;
     if(url ->path != NULL && strlen(url ->path) != 0)
     {
-        appendBuffer(&buff, url ->path, strlen(url ->path)) ;
+        appendBuffer(buff, url ->path, strlen(url ->path)) ;
     }
-    lstripBuffer(&buff, '?') ;
+    appendBuffer(buff, "?", 1) ;
     if(url ->query != NULL && strlen(url ->query) != 0)
     {
-        appendBuffer(&buff, url ->query, strlen(url ->query)) ;
-        appendBuffer(&buff, "&", 1) ;
+        appendBuffer(buff, url ->query, strlen(url ->query)) ;
+        appendBuffer(buff, "&", 1) ;
     }
-    appendBuffer(&buff, " ", 1) ;
-    //method path version \r\n
-    appendBuffer(&buff, "HTTP/", 5) ;
-    appendBuffer(&buff, httpreq ->version, strlen(httpreq ->version)) ;
-    appendBuffer(&buff, "\r\n", 2) ; 
-    int total = 0 ;
-    total = calcDataLen(&httpreq ->data) ;
-    if(total != 0)
+    if(method == GET && !isEmpty(&httpreq ->data))
+    {
+        FOREACH(key, val, &httpreq ->data)
+        {
+            appendBuffer(buff, key, strlen(key)) ;
+            appendBuffer(buff, "=", 1) ;
+            if(val != NULL)
+            {
+                appendBuffer(buff, val, strlen(val)) ;
+            }
+            appendBuffer(buff, "&", 1) ;
+        }
+        lstripBuffer(buff, '&') ;
+    }
+    lstripBuffer(buff, '&') ;
+    lstripBuffer(buff, '?') ;
+    appendBuffer(buff, " ", 1) ;
+    appendBuffer(buff, "HTTP/", 5) ;
+    appendBuffer(buff, httpreq ->version, strlen(httpreq ->version)) ;
+    appendBuffer(buff, "\r\n", 2) ; 
+    int total = calcDataLen(&httpreq ->data) ;
+    if(total != 0 && method == POST)
     {
         char length[20] = {0};
         addRequestHeader(httpreq, "Content-Length", itoa(total, length)) ;
         addRequestHeader(httpreq, "Content-Type", "application/x-www-form-urlencoded") ;
     }
     addDefaultRequestHeader(httpreq) ;    
-    appendBuffer(&buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
-    appendBuffer(&buff, "\r\n", 2) ;
+    appendBuffer(buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
+    appendBuffer(buff, "\r\n", 2) ;
+    return 0 ;
+}
 
-    if(!isEmpty(&httpreq ->data))
+static int makeBody(HTTPREQUEST *httpreq, BUFFER *buff, int method)
+{
+    if(method == POST && !isEmpty(&httpreq ->data))
     {
         FOREACH(key, val, &httpreq ->data)
         {
-            appendBuffer(&buff, key, strlen(key)) ;
-            appendBuffer(&buff, "=", 1) ;
+            appendBuffer(buff, key, strlen(key)) ;
+            appendBuffer(buff, "=", 1) ;
             if(val != NULL)
             {
-                appendBuffer(&buff, val, strlen(val)) ;
+                appendBuffer(buff, val, strlen(val)) ;
             }
-            appendBuffer(&buff, "&", 1) ;
+            appendBuffer(buff, "&", 1) ;
         }
-        lstripBuffer(&buff, '&') ;
+        lstripBuffer(buff, '&') ;
+    }
+    return 0 ;
+}
+
+HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int method, int timeout)
+{
+    if(httpreq == NULL || httpreq ->url == NULL) 
+    {
+        return NULL ;
+    }
+    BUFFER buff ;
+    initBuffer(&buff) ;
+    makeHeader(httpreq, &buff, method) ;
+    makeBody(httpreq, &buff, method) ;
+    URL *url = httpreq ->url ;
+    int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
+    if(fd < 0)
+    {
+       return NULL; 
     }
     if(sendData(fd, getBufferData(&buff), getBufferSize(&buff)) != getBufferSize(&buff))
     {
         printf("send [%s] fail\n", getBufferData(&buff)) ;
     }
-    HTTPRESPONSE *rsp = initHttpResponse(MALLOC(sizeof(HTTPRESPONSE))) ;
-    if(rsp == NULL)
-    {
-        //printf("fail to create response object:%s\n", strerror(errno)) ;
-        //return NULL ;
-    }
-    char hdrBuff[64*1024] = {0} ;
-    int hdrLen = 0 ;
-    total = readUntil(fd, hdrBuff, sizeof(hdrBuff), &hdrLen, "\r\n\r\n") ;
-    if(hdrLen == 0)
-    {
-        printf("too big http response header\n") ;
-        return NULL ;
-    }
-    //if(parseHttpResponseHeader(&rsp ->httphdr, hdrBuff) == ) 解析收到的http响应头
-    if(total > hdrLen)
-    {
-       //剩余的数据添加到结构的body中 
-    }
-    //返回响应对象
-    return rsp ; 
+    freeBuffer(&buff) ;
+    return getResponse(fd) ;
 }
 
-HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int timeout)
+HTTPRESPONSE *sendRequestWithGET(HTTPREQUEST *httpreq, int timeout)
 {
-    if(httpreq == NULL || httpreq ->url == NULL)
-    {
-        return NULL ;
-    }
-
-    if(httpreq ->method == GET)
-    {
-        return sendRequestWithGET(httpreq, timeout) ;
-    }
-    else
-    {
-        return sendRequestWithPOST(httpreq, timeout) ;
-    }
+    return sendRequest(httpreq, GET, timeout) ;
 }
 
-HttpResponseHeader *getResponse(HTTPREQUEST *httpreq)
+HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 {
-    return NULL ;
+    return sendRequest(httpreq, POST, timeout) ;
 }
-
 
 #if 1
 int main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://172.100.102.153:9393/merchant/v1/login") ;
+    setHttpRequestUrl(&request,"http://172.100.102.153:9393/merchant/v1/login?hello=world") ;
     addRequestData(&request, "username", strlen("username"), "15110256548", strlen("15110256548")) ;
     addRequestData(&request, "password", strlen("password"), "256548", strlen("256548")) ;
     //addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
 
-    sendRequestWithPOST(&request, -1) ;
+    HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
+    if(rsp == NULL)
+    {
+        printf("fail to parse the http response \n") ;
+    }
     freeHttpRequest(&request) ;
+    freeHttpResponse(rsp) ;
     return 0 ;
 }
 #endif
