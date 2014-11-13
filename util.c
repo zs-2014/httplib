@@ -174,6 +174,20 @@ char *itoa(int num, char *buff)
     return buff ;
 }
 
+int skipChar(const char *str, int ch)
+{
+   if(str == NULL) 
+   {
+        return 0 ;
+   }
+   const char *tmp = str ;
+   while(*tmp != '\0' && *tmp == ch)
+   {
+        tmp++ ; 
+   }
+   return tmp - str ;
+}
+
 int sendData(int fd, const void *buff, int sz)
 {
     if(fd < 0 || buff == NULL|| sz == 0)

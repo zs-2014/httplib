@@ -182,7 +182,7 @@ static int parseKeyValue(HttpResponseHeader *httphdr)
         char *key_e = strchr(key_b, ':');
         if(key_e != NULL)
         {
-            char *val_b = key_e + 1 ; 
+            char *val_b = key_e + skipChar(key_e + 1, ' ') + 1 ; 
             //此行的结束
             char *val_e = strstr(val_b, "\r\n");
             if(val_e == NULL)

@@ -300,6 +300,19 @@ HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 }
 
 #if 1
+void printHttpResponseHeader(HttpResponseHeader *httphdr)
+{
+    if(!httphdr)
+    {
+        return ;
+    }
+    int i = 0;
+    printf("version=%s\ncode=%s\nreason=%s\n", httphdr ->version, httphdr ->code, httphdr ->reason);
+    for (i = 0 ;i < httphdr ->count; i++)
+    {
+       printf("%s:%s\n", httphdr ->key_val[i].key, httphdr ->key_val[i].value) ; 
+    }
+}
 int main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
@@ -315,6 +328,7 @@ int main(int argc, char *argv[])
         printf("fail to parse the http response \n") ;
     }
     freeHttpRequest(&request) ;
+    printHttpResponseHeader(&rsp ->httprsphdr) ;
     freeHttpResponse(rsp) ;
     return 0 ;
 }
