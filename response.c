@@ -266,6 +266,8 @@ HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
    httprsp ->rspfd = -1 ;
    httprsp ->extraData = NULL ;
    httprsp ->extraSize = 0 ;
+   httprsp ->nextChunkSize = 0 ;
+   memset(httprsp ->buff, 0, sizeof(httprsp ->buff)) ;
    initHttpResponseHeader(&httprsp ->httprsphdr) ;
    return httprsp ;
 }
@@ -276,8 +278,10 @@ int setResponseExtraData(HTTPRESPONSE *httprsp, char *extraData, int sz)
     {
         return -1 ;
     }
-    httprsp ->extraData = extraData ;
-    httprsp ->extraSize = sz ;
+    httprsp ->currSz = MIN(sizeof(httprsp ->buff) - 1, sz) ;
+    memcpy(httprsp ->buff, extraData, httprsp ->currSz) ;
+    //httprsp ->extraData = extraData ;
+    //httprsp ->extraSize = sz ;
     return 0 ;
 }
 
@@ -327,7 +331,7 @@ int setResponseSocket(HTTPRESPONSE *httprsp, int sockfd)
     return 0 ;
 }
 
-int copyValueFromResponseHeader(HttpResponseHeader *httphdr, const char *key, void *buff, int sz, int num)
+static int searchResponseHeader(HttpResponseHeader *httphdr, const char *key, int num)
 {
     if(httphdr == NULL || key == NULL)
     {
@@ -342,20 +346,68 @@ int copyValueFromResponseHeader(HttpResponseHeader *httphdr, const char *key, vo
             //num代表获取第几个key  因为在http头中，可能有多个相同的key,比如Set-Cookie
             if(--num == 0)
             {
-                //如果sz等于0的话返回这个value需要的缓冲区的大小
-               if(sz == 0) 
-               {
-                    return strlen(httphdr ->key_val[i].value) ;
-               }
-               else
-               {
-                    strncpy(buff, httphdr ->key_val[i].value, sz) ;
-                    return strlen(httphdr ->key_val[i].value) ;
-               }
+                return i ;
             }
         }
     }
     return -1 ;
+}
+
+int copyValueFromResponseHeader(HttpResponseHeader *httphdr, const char *key, void *buff, int sz, int num)
+{
+    if(httphdr == NULL || key == NULL)
+    {
+        return -1 ;
+    } 
+    int idx = searchResponseHeader(httphdr, key, num) ;
+    if(idx != -1)
+    {
+       if(sz == 0) 
+       {
+            return strlen(httphdr ->key_val[idx].value) ;
+       }
+       else
+       {
+            strncpy(buff, httphdr ->key_val[idx].value, sz) ;
+            return strlen(httphdr ->key_val[idx].value) ;
+       }
+    }
+    return -1 ;
+}
+
+char *getTransferEncoding(HttpResponseHeader *httphdr, void *buff, int sz)
+{
+    int ret = copyValueFromResponseHeader(httphdr, "Transfer-Encoding", buff, sz, 1) ; 
+    if(ret == -1 && ret >= sz)    
+    {
+        return NULL ; 
+    }
+    return buff ;
+}
+
+//传输编码是否是chunked
+//chunked编码的格式如下
+/*chunked-len\r\n
+  chunked-data\r\n
+  .....
+  0\r\n
+*/
+int isChunkedEncoding(HttpResponseHeader *httphdr)
+{
+    char buff[512] = {0} ;
+    char *p = getTransferEncoding(httphdr, buff, sizeof(buff) - 1) ;
+    return p == NULL ? 0 :strcasecmp(p, "chunked") == 0 ;
+}
+
+int getContentLength(HttpResponseHeader *httphdr)
+{
+    char buff[40] = {0};
+    int ret = copyValueFromResponseHeader(httphdr, "Content-Length", buff, sizeof(buff)-1, 1) ;
+    if(ret == -1)
+    {
+        return -1 ;
+    }
+    return atoi(buff) ;
 }
 
 int copyResponseHeaderValue(HTTPRESPONSE *httprsp, const char *key, void *buff, int sz, int num)
@@ -367,18 +419,111 @@ int copyResponseHeaderValue(HTTPRESPONSE *httprsp, const char *key, void *buff, 
     return copyValueFromResponseHeader(&httprsp ->httprsphdr, key, buff, sz, num) ;
 }
 
-int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
+//响应头时chunked数据
+int readChunkedResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
 {
     if(httprsp == NULL || buff == NULL || sz <= 0 || httprsp ->rspfd < 0)
     {
         return 0 ;
     }
+    int nRecv = 0 ;
+    int nextLen = 0 ;
+    int flag = 0 ;
+    while(sz != 0)
+    {
+        //缓冲区中有数据，且当前chunk还未读完
+        if(httprsp ->nextChunkSize != 0 && httprsp ->currSz != 0)
+        {
+            int min = MIN(httprsp ->nextChunkSize, MIN(sz, httprsp ->currSz)) ;
+            memcpy((char *)buff + nRecv, httprsp ->buff + httprsp ->currPos, min) ;
+            sz -= min ; 
+            httprsp ->currSz -= min ; 
+            httprsp ->nextChunkSize -= min ;
+            httprsp ->currPos += min ;
+            nRecv += min ;
+        }
+        //缓冲区中无数据了
+        else if(httprsp ->currSz == 0)
+        {
+            int min = MIN(httprsp ->nextChunkSize, MIN(sz, sizeof(httprsp ->buff)-1)) ;
+            //刚好缓冲区中无数据了，chunk也读完了
+            if(httprsp ->nextChunkSize == 0)
+            {
+               min = sz + 6 ; 
+            }
+            int ret = readFully(httprsp ->rspfd, httprsp ->buff, min) ;
+            if(ret == 0)
+            {
+                return -1 ;
+            }
+            httprsp ->buff[ret] = '\0' ;
+            httprsp ->currSz = ret ;
+            httprsp ->currPos = 0 ;
+        }
+        //需要重新处理缓冲区中的数据
+        else if(httprsp ->nextChunkSize == 0)
+        {
+            //chunk数据部分结束了，去掉\r\n,所以当前位置向前移动2个字节
+            httprsp ->currPos += 2 ; 
+            //查找部分chunk数据长度部分
+            char *p = strstr(httprsp ->buff + httprsp ->currPos, "\r\n") ;
+            if(p == NULL)
+            { 
+            }
+            httprsp ->nextChunkSize = strtol(httprsp ->buff + httprsp ->currPos, (char **)NULL, 16) ;
+            //chunk长度为0的表示结束
+            if(httprsp ->nextChunkSize == 0)
+            {
+                httprsp ->currSz = 0 ;
+                httprsp ->currPos = 0 ;
+                return nRecv ;
+            }
+            httprsp ->currSz -= p - (httprsp ->buff + httprsp ->currPos) + 2 ;
+            //+2是因为chunk长度部分使用的是\r\n分割的，真正的数据在其后，所以要跳过\r\n
+            httprsp ->currPos = p - httprsp ->buff + 2 ;
+        }
+    }
+    return nRecv ;
 }
 
-int readResponseFully(HTTPRESPONSE *httprsp, void *buff, int sz)
+int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
 {
     if(httprsp == NULL || buff == NULL || sz <= 0 || httprsp ->rspfd < 0)
     {
         return 0 ;
+    } 
+    //采用chunked编码
+    if(isChunkedEncoding(&httprsp ->httprsphdr))
+    {
+        return readChunkedResponse(httprsp, buff, sz) ;
+    }
+    else
+    {
+        if(httprsp ->extraSize != 0)
+        {
+            memcpy(buff, httprsp ->extraData, MIN(httprsp ->extraSize, sz)) ;
+            //如果在读取响应头时 读出的body数据大于要取出的数据
+            if(httprsp ->extraSize >= sz)
+            {
+                httprsp ->extraSize -= sz ;
+                httprsp ->extraData += sz ;
+                return sz ;
+            }
+            else
+            {
+                httprsp ->extraSize = 0 ;
+                sz -= httprsp ->extraSize ;
+            }
+        }                //响应头设置了Content-Length
+        int length = getContentLength(&httprsp ->httprsphdr) ; 
+        if(length != -1)
+        {
+            return readFully(httprsp ->httprsphdr.rspfd, buff, MIN(length, sz)) ;
+        }
+        else
+        {
+            //没有采用chunked也没有指定Content-Length
+            return readFully(httprsphdr ->httprsphdr.rspfd, buff, sz) ;
+        }
     }
 }

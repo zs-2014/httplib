@@ -25,9 +25,11 @@ typedef struct HTTPRESPONSE
    HttpResponseHeader httprsphdr ;
    int rspfd ;
 
-   //extraData 包含的是在接受http响应头时，\r\n 后面的body中的数据此缓冲区在http response header中被释放
-   char *extraData ;
-   int extraSize ;
+   //transfer-encoding 为chunk时，记录距离下一个chunk还有多少数据要读
+   int nextChunkSize ;
+   char buff[8192] ;
+   int currSz ;
+   int currPos ;
 
 }HTTPRESPONSE ;
 

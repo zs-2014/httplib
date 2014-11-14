@@ -254,7 +254,7 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
     {
         return NULL ;
     }
-
+//这个size不能超过8K
 #define BUFF_GROW_SIZE 512 
 
     char *buff = (char *)CALLOC(1, BUFF_GROW_SIZE + 1) ; 
