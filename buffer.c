@@ -98,30 +98,3 @@ uint getBufferSize(const BUFFER *buff)
 {
    return buff == NULL ? 0 : buff ->currSz ; 
 }
-
-
-#if 0
-void printBuffer(BUFFER *buff)
-{
-    printf("buff:currSz = %u size = %u\n", buff ->currSz, buff ->size) ;
-}
-void appendBufferTest()
-{
-   BUFFER buff ;
-   initBuffer(&buff) ;
-   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
-   printBuffer(&buff) ;
-   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
-   printBuffer(&buff) ;
-   char bf[1024] = {0} ;
-   appendBuffer(&buff, bf, sizeof(bf)) ;
-   printBuffer(&buff) ;
-   freeBuffer(&buff) ;
-}
-
-int main(int argc, char *argv[])
-{
-    appendBufferTest() ; 
-    return 0 ; 
-}
-#endif

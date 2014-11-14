@@ -157,12 +157,3 @@ char *urlencode(const char *str)
 {
     return quotestr(str, NULL) ;
 }
-
-#if 0
-int main(int argc, char *argv[])
-{
-    
-    return 0 ;
-}
-
-#endif

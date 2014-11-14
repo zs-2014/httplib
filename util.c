@@ -305,22 +305,3 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
     *totalLen = 0 ;
     return NULL ;
 }
-
-#if 0 
-int main(int argc,char *argv[])
-{
-    int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;
-    printf("%d\n", fd)  ;
-    char buff[] = {"GET / HTTP/1.1\r\nContent-Type:plain/text\r\nUser-Agent:curlib2.7\r\n\r\n"} ; 
-    printf("write = %d\n", write(fd,buff, strlen(buff))) ;
-    int len = 0 ;
-    int total ;
-    char *bff = readUntil(fd, &total, &len, "\r\n\r\n") ;
-    printf("len = [%d]\ntotal=%d\n", len, total) ;
-    printf("%s\n", bff) ;
-    close(fd) ;
-    FREE(bff) ;
-    perror("error msg") ;
-	return 0 ;
-}
-#endif

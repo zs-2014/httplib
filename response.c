@@ -327,6 +327,46 @@ int setResponseSocket(HTTPRESPONSE *httprsp, int sockfd)
     return 0 ;
 }
 
+int copyValueFromResponseHeader(HttpResponseHeader *httphdr, const char *key, void *buff, int sz, int num)
+{
+    if(httphdr == NULL || key == NULL)
+    {
+        return -1 ;
+    } 
+    int i = 0 ;
+    for(i = 0 ;i < httphdr ->count ; i++)
+    {
+        //忽略大小写
+        if(strcasecmp(httphdr ->key_val[i].key, key) == 0)
+        {
+            //num代表获取第几个key  因为在http头中，可能有多个相同的key,比如Set-Cookie
+            if(--num == 0)
+            {
+                //如果sz等于0的话返回这个value需要的缓冲区的大小
+               if(sz == 0) 
+               {
+                    return strlen(httphdr ->key_val[i].value) ;
+               }
+               else
+               {
+                    strncpy(buff, httphdr ->key_val[i].value, sz) ;
+                    return strlen(httphdr ->key_val[i].value) ;
+               }
+            }
+        }
+    }
+    return -1 ;
+}
+
+int copyResponseHeaderValue(HTTPRESPONSE *httprsp, const char *key, void *buff, int sz, int num)
+{
+    if(httprsp == NULL || key == NULL)
+    {
+        return -1 ;
+    }
+    return copyValueFromResponseHeader(&httprsp ->httprsphdr, key, buff, sz, num) ;
+}
+
 int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
 {
     if(httprsp == NULL || buff == NULL || sz <= 0 || httprsp ->rspfd < 0)
@@ -342,31 +382,3 @@ int readResponseFully(HTTPRESPONSE *httprsp, void *buff, int sz)
         return 0 ;
     }
 }
-
-#if 0 
-void printHttpResponseHeader(HttpResponseHeader *httphdr)
-{
-    if(!httphdr)
-    {
-        return ;
-    }
-    int i = 0;
-    printf("version=%s\ncode=%s\nreason=%s\n", httphdr ->version, httphdr ->code, httphdr ->reason);
-    for (i = 0 ;i < httphdr ->count; i++)
-    {
-       printf("%s:%s\n", httphdr ->key_val[i].key, httphdr ->key_val[i].value) ; 
-    }
-}
-int main(int argc, char *argv[])
-{
-    char buff[] = "HTTP/1.2 200 OK\r\nkey1: value1\r\nkey2:value2\r\nkey3:values,123\r\n\r\n" ;
-    HttpResponseHeader hdr ;
-    initHttpResponseHeader(&hdr) ;
-    if(parseHttpResponseHeader(&hdr) == 0)
-    {
-        printHttpResponseHeader(&hdr) ;
-        freeHttpResponseHeader(&hdr) ;
-    }
-    return 0 ;
-}
-#endif

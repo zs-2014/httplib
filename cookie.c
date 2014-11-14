@@ -41,6 +41,7 @@ static uint getGrow(COOKIE *cookie)
     return DEFAULT_COOKIE_BUFF_SIZE ;
 }
 
+//在session buffer中查找一个key val
 static int search(COOKIE *cookie, const char *key, char **key_b, char **val_b, char **val_e)
 {
     int keyLen = strlen(key) ;
@@ -75,10 +76,12 @@ static delOption(COOKIE *cookie, const char *option)
     }
 
     char *option_b = strstr(cookie ->cookieBuff, option) ;
+    //如果查找到了这个session选项
     while(option_b != NULL)
     {
         if(option_b != cookie ->cookieBuff)
         {
+            //保证session是完全匹配的
             if(option_b[-1] == ';' && option_b[oplen] == ';')
             {
                 memcpy(option_b, option_b + oplen + 1, cookie ->currSize - (option_b - cookie ->cookieBuff + oplen + 1)) ;
@@ -88,11 +91,14 @@ static delOption(COOKIE *cookie, const char *option)
             }
             else
             {
-                option_b = strstr(option_b + 1, option) ;
+                //不匹配的话，继续查找下去
+                option_b = strstr(option_b + oplen, option) ;
             }
         }
+        //如果这个session选项在开头
         else
         {
+            //这个逻辑有点问题
            memset(option_b, 0, oplen) ; 
            cookie ->currSize = 0 ;
            return 0 ;
@@ -101,19 +107,12 @@ static delOption(COOKIE *cookie, const char *option)
     return 0 ;
 }
 
-
-
 int initCookie(COOKIE *cookie)
 {
     if(cookie == NULL) 
     {
             return -1 ;
     }
-    //cookie ->cookieBuff = (char *)malloc(sizeof(char)*DEFAULT_COOKIE_BUFF_SIZE) ;
-    //if(cookie ->cookieBuff == NULL)
-    //{
-    //    return -1 ;
-    //}
     cookie ->cookieBuff = NULL ;
     cookie ->size = 0 ;
     cookie ->currSize = 0 ;
@@ -209,27 +208,27 @@ int updateKey(COOKIE *cookie, const char *key, const char *newValue)
     {
         return -1 ;
     }
-    //deleteKey(cookie, key) ;
-    //addKeyValue(cookie, key, newValue) ;
-    char *key_b = NULL ; 
-    uint keyLen = strlen(key) ;
-    char *val_b = NULL ;
-    char *val_e = NULL ;
-    search(cookie, key, &key_b, &val_b, &val_e) ;
-    if(key_b == NULL)
-    {
-        return addKeyValue(cookie, key, newValue) ;
-    }
-    int valLen = val_e - val_b ;
-    int newValLen = strlen(newValue) ;
-    if(cookie ->currSize + newValLen >= cookie ->size)
-    {
-        if(reallocCookie(cookie, cookie ->currSize + newValLen + getGrow(cookie)) == NULL)
-        {
-            return -1 ;
-        }
-        return updateKey(cookie, key, newValue) ;
-    }
+    deleteKey(cookie, key) ;
+    return addKeyValue(cookie, key, newValue) ;
+    //char *key_b = NULL ; 
+    //uint keyLen = strlen(key) ;
+    //char *val_b = NULL ;
+    //char *val_e = NULL ;
+    //search(cookie, key, &key_b, &val_b, &val_e) ;
+    //if(key_b == NULL)
+    //{
+    //    return addKeyValue(cookie, key, newValue) ;
+    //}
+    //int valLen = val_e - val_b ;
+    //int newValLen = strlen(newValue) ;
+    //if(cookie ->currSize + newValLen >= cookie ->size)
+    //{
+    //    if(reallocCookie(cookie, cookie ->currSize + newValLen + getGrow(cookie)) == NULL)
+    //    {
+    //        return -1 ;
+    //    }
+    //    return updateKey(cookie, key, newValue) ;
+    //}
     // hello=world;xx=xxxx   ----->hello=word;xx=xxxx  currSize=12
     //       |    |
     //   val_b    val_e (val_e - val_b == 5) 
@@ -242,31 +241,31 @@ int updateKey(COOKIE *cookie, const char *key, const char *newValue)
     //                                      hello=wordd;  ->hello=word;xx=xxxxx
     //memcpy(val_b + newValLen, val_e, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;
     //cookie ->cookieBuff[cookie ->currSize] = '\0' ---> hello=word;xx=xxxx
-    if(valLen > newValLen)
-    {
-        memcpy(val_b, newValue, newValLen) ; 
-        memcpy(val_b + newValLen, val_e, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;
-        cookie ->currSize -= valLen - newValLen ;
-        cookie ->cookieBuff[cookie ->currSize] = '\0';
-        return 0 ;
-    }
-    else if(valLen == newValLen)
-    {
-        memcpy(val_b, newValue, valLen) ; 
-        return 0 ;
-    }
-    else
-    {
-        char *end = cookie ->cookieBuff + cookie ->currSize ;  
-        while(end >= val_e)
-        {
-           end[newValLen-valLen] = *end ;
-           end-- ;
-        }
-        memcpy(val_b, newValue, newValLen) ;
-        cookie ->currSize += newValLen - valLen ; 
-    }
-    return 0 ;
+    //if(valLen > newValLen)
+    //{
+    //    memcpy(val_b, newValue, newValLen) ; 
+    //    memcpy(val_b + newValLen, val_e, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;
+    //    cookie ->currSize -= valLen - newValLen ;
+    //    cookie ->cookieBuff[cookie ->currSize] = '\0';
+    //    return 0 ;
+    //}
+    //else if(valLen == newValLen)
+    //{
+    //    memcpy(val_b, newValue, valLen) ; 
+    //    return 0 ;
+    //}
+    //else
+    //{
+    //    char *end = cookie ->cookieBuff + cookie ->currSize ;  
+    //    while(end >= val_e)
+    //    {
+    //       end[newValLen-valLen] = *end ;
+    //       end-- ;
+    //    }
+    //    memcpy(val_b, newValue, newValLen) ;
+    //    cookie ->currSize += newValLen - valLen ; 
+    //}
+    //return 0 ;
 }
 
 int addSecureOption(COOKIE *cookie) 
@@ -327,125 +326,4 @@ const char *cookie2String(COOKIE *cookie)
 {
     return cookie != NULL ?cookie ->cookieBuff :NULL ;
 }
-int printCookie(COOKIE *cookie)
-{
-    if(cookie == NULL)
-    {
-        return -1 ;
-    }
-    printf("cookiebuff = %s\n", cookie ->cookieBuff) ;
-    return 0 ;
-}
 
-#if 0
-void updateTest()
-{
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "path", "/") ;
-    addKeyValue(&cookie, "name1", "zs1") ;
-    addKeyValue(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
-
-    updateKey(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
-    
-    updateKey(&cookie, "name", "test1 for update Test  xxxxxxx") ;
-    printCookie(&cookie) ;
-
-    updateKey(&cookie, "name", "") ;
-    printCookie(&cookie) ;
-
-    char buff[1024] = {0} ;
-    memset(buff, 'a', sizeof(buff) - 1) ;
-    updateKey(&cookie, "name", buff);
-    printCookie(&cookie) ;
-    freeCookie(&cookie) ;
-}
-
-void delTest()
-{
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "path", "/") ;
-    addKeyValue(&cookie, "name1", "zs1") ;
-    addKeyValue(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
-
-    deleteKey(&cookie, "name") ;
-    printCookie(&cookie) ;
-    
-    updateKey(&cookie, "name", "test1 for update Test  xxxxxxx") ;
-    printCookie(&cookie) ;
-
-    deleteKey(&cookie, "name") ;
-    printCookie(&cookie) ;
-
-    char buff[1024] = {0} ;
-    memset(buff, 'a', sizeof(buff) - 1) ;
-    deleteKey(&cookie, "name");
-    printCookie(&cookie) ;
-
-    freeCookie(&cookie) ;
-
-}
-
-void addTest()
-{
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    char buff[1024] = {0} ;
-    memset(buff, 'a', sizeof(buff) - 1) ;
-    addKeyValue(&cookie, "name", "val") ;
-    printCookie(&cookie) ;
-    addKeyValue(&cookie, "key", "value") ;
-    printCookie(&cookie) ;
-    addKeyValue(&cookie, "key", buff) ;
-    printCookie(&cookie) ;
-
-    freeCookie(&cookie) ;
-}
-
-void OptionTest()
-{
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "name", "zs") ;
-    addSecureOption(&cookie) ;
-    printCookie(&cookie);
-    addHttponlyOption(&cookie) ;
-    printCookie(&cookie) ;
-    addKeyValue(&cookie, "name1", "zs") ;
-
-    delHttponlyOption(&cookie) ;
-    printCookie(&cookie) ;
-    delSecureOption(&cookie) ;
-    printCookie(&cookie) ;
-
-    freeCookie(&cookie) ;
-}
-void getValTest()
-{
-    COOKIE cookie;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "name", "value") ;
-    addKeyValue(&cookie, "name1", "value1") ;
-    addKeyValue(&cookie, "name2", "value2") ;
-    char buff[30] = {0} ;
-    char buff1[30] = {0} ;
-    char buff2[30] = {0} ;
-    char buff3[30] = {0} ;
-    printf("name = %s\nname1 = %s\nname2 = %s\nname3=%s\n", copyValue(&cookie, "name", buff), copyValue(&cookie, "name1", buff1), copyValue(&cookie, "name2", buff2), copyValue(&cookie, "name3", buff3)) ;
-
-}
-int main(int argc, char *argv[])
-{
-    updateTest() ;
-    delTest() ;
-    addTest() ;
-    getValTest() ;
-    OptionTest() ;
-    return 0 ;
-}
-
-#endif

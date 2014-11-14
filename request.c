@@ -298,38 +298,3 @@ HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
 {
     return sendRequest(httpreq, POST, timeout) ;
 }
-
-#if 1
-void printHttpResponseHeader(HttpResponseHeader *httphdr)
-{
-    if(!httphdr)
-    {
-        return ;
-    }
-    int i = 0;
-    printf("version=%s\ncode=%s\nreason=%s\n", httphdr ->version, httphdr ->code, httphdr ->reason);
-    for (i = 0 ;i < httphdr ->count; i++)
-    {
-       printf("%s:%s\n", httphdr ->key_val[i].key, httphdr ->key_val[i].value) ; 
-    }
-}
-int main(int argc, char *argv[])
-{
-    HTTPREQUEST request ;
-    initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://172.100.102.153:9393/merchant/v1/login?hello=world") ;
-    addRequestData(&request, "username", strlen("username"), "15110256548", strlen("15110256548")) ;
-    addRequestData(&request, "password", strlen("password"), "256548", strlen("256548")) ;
-    //addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
-
-    HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
-    if(rsp == NULL)
-    {
-        printf("fail to parse the http response \n") ;
-    }
-    freeHttpRequest(&request) ;
-    printHttpResponseHeader(&rsp ->httprsphdr) ;
-    freeHttpResponse(rsp) ;
-    return 0 ;
-}
-#endif
