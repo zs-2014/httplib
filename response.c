@@ -264,10 +264,10 @@ HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
         return NULL ;
    }
    httprsp ->rspfd = -1 ;
-   httprsp ->extraData = NULL ;
-   httprsp ->extraSize = 0 ;
    httprsp ->nextChunkSize = 0 ;
    memset(httprsp ->buff, 0, sizeof(httprsp ->buff)) ;
+   httprsp ->currSz = 0 ;
+   httprsp ->currPos = 0 ;
    initHttpResponseHeader(&httprsp ->httprsphdr) ;
    return httprsp ;
 }
@@ -280,8 +280,6 @@ int setResponseExtraData(HTTPRESPONSE *httprsp, char *extraData, int sz)
     }
     httprsp ->currSz = MIN(sizeof(httprsp ->buff) - 1, sz) ;
     memcpy(httprsp ->buff, extraData, httprsp ->currSz) ;
-    //httprsp ->extraData = extraData ;
-    //httprsp ->extraSize = sz ;
     return 0 ;
 }
 
@@ -296,8 +294,8 @@ int freeHttpResponse(HTTPRESPONSE *httprsp)
         close(httprsp ->rspfd) ;
     }
     httprsp ->rspfd = -1 ;
-    httprsp ->extraData = NULL ;
-    httprsp ->extraSize = 0 ;
+    httprsp ->currPos = 0;
+    httprsp ->currSz = 0 ;
     return freeHttpResponseHeader(&httprsp ->httprsphdr) ;
 }
 
@@ -499,31 +497,32 @@ int readResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
     }
     else
     {
-        if(httprsp ->extraSize != 0)
+        if(httprsp ->currSz != 0)
         {
-            memcpy(buff, httprsp ->extraData, MIN(httprsp ->extraSize, sz)) ;
+            memcpy(buff, httprsp ->buff + httprsp ->currPos, MIN(httprsp ->currSz, sz)) ;
             //如果在读取响应头时 读出的body数据大于要取出的数据
-            if(httprsp ->extraSize >= sz)
+            if(httprsp ->currSz >= sz)
             {
-                httprsp ->extraSize -= sz ;
-                httprsp ->extraData += sz ;
+                httprsp ->currSz -= sz ;
+                httprsp ->currPos += sz ;
                 return sz ;
             }
             else
             {
-                httprsp ->extraSize = 0 ;
-                sz -= httprsp ->extraSize ;
+                httprsp ->currSz = 0 ;
+                httprsp ->currPos = 0 ;
+                sz -= httprsp ->currSz ;
             }
         }                //响应头设置了Content-Length
         int length = getContentLength(&httprsp ->httprsphdr) ; 
         if(length != -1)
         {
-            return readFully(httprsp ->httprsphdr.rspfd, buff, MIN(length, sz)) ;
+            return readFully(httprsp ->rspfd, buff, MIN(length, sz)) ;
         }
         else
         {
             //没有采用chunked也没有指定Content-Length
-            return readFully(httprsphdr ->httprsphdr.rspfd, buff, sz) ;
+            return readFully(httprsp ->rspfd, buff, sz) ;
         }
     }
 }
