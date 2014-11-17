@@ -243,7 +243,7 @@ int readFully(int fd, void *buff, int sz)
             {
                 continue ;
             }
-            return nRecv ;
+            return -1;
         }
     }
     return nRecv ;
@@ -275,7 +275,6 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
             if(p != NULL)
             {
                 *len = p - buff + strlen(flagstr) ;
-                p[strlen(flagstr)] = '\0' ;
                 *totalLen = nRecv ;
                 return buff ;
             }

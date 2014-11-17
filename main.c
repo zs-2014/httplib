@@ -314,8 +314,13 @@ int request_main(int argc, char *argv[])
     {
         printf("fail to parse the http response \n") ;
     }
+    char buff[10250] = {0} ;
+    //int ret = readFully(rsp ->rspfd, buff, sizeof(buff)-1) ;
+    //printf("%s", buff) ;
+    readResponse(rsp, buff, sizeof(buff) - 1) ;
+    printf("read [%s]\n", buff) ;
     freeHttpRequest(&request) ;
-    printHttpResponseHeader(&rsp ->httprsphdr) ;
+    //printHttpResponseHeader(&rsp ->httprsphdr) ;
     freeHttpResponse(rsp) ;
     return 0 ;
 }
@@ -363,8 +368,6 @@ int util_main(int argc,char *argv[])
 int main(int argc, char *argv[])
 {
     char buff[20] ;
-    printf("itoa = %s\n",itoa(123, buff)) ;
-    printf("itoa = %s\n", itoa(1234, buff)) ;
-    printf("itoa = %s\n", itoa(0, buff)) ;
+    request_main(argc, argv) ;
     return 0 ;
 }

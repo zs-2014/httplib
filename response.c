@@ -268,6 +268,7 @@ HTTPRESPONSE *initHttpResponse(HTTPRESPONSE *httprsp)
    memset(httprsp ->buff, 0, sizeof(httprsp ->buff)) ;
    httprsp ->currSz = 0 ;
    httprsp ->currPos = 0 ;
+   httprsp ->chunkCount = 0 ;
    initHttpResponseHeader(&httprsp ->httprsphdr) ;
    return httprsp ;
 }
@@ -280,6 +281,7 @@ int setResponseExtraData(HTTPRESPONSE *httprsp, char *extraData, int sz)
     }
     httprsp ->currSz = MIN(sizeof(httprsp ->buff) - 1, sz) ;
     memcpy(httprsp ->buff, extraData, httprsp ->currSz) ;
+    printf("%s", httprsp ->buff) ;
     return 0 ;
 }
 
@@ -416,6 +418,73 @@ int copyResponseHeaderValue(HTTPRESPONSE *httprsp, const char *key, void *buff, 
     }
     return copyValueFromResponseHeader(&httprsp ->httprsphdr, key, buff, sz, num) ;
 }
+static int readChunkedLen(HTTPRESPONSE *httprsp)
+{
+    int flag = 0 ;
+    char beg[2] = {0} ;
+    //读取chunk头 并获取长度
+    if(httprsp ->currSz != 0)
+    {
+        if(httprsp ->chunkCount != 0)
+        {
+            httprsp ->currPos += 2 ;
+        }
+        char *p = strchr(httprsp ->buff + httprsp ->currPos, '\r') ; 
+        if(p != NULL)
+        {
+            if(p[1] == '\n')   
+            {
+                    httprsp ->nextChunkSize = strtol(httprsp ->buff + httprsp ->currPos, (char **)NULL, 16) ; 
+                    httprsp ->currSz -= p - (httprsp ->buff + httprsp ->currPos) + 2 ;
+                    httprsp ->currPos = p - httprsp ->buff + 2 ;
+                    return 0 ;
+            }
+            else if(p[1] == '\0')
+            {
+                *p = '\0' ;
+                httprsp ->nextChunkSize = strtol(p, (char **)NULL, 16) ; 
+                flag = 1 ;
+            }
+            else
+            {
+                return -1 ;
+            }
+       }
+       else
+       {
+            httprsp ->nextChunkSize = strtol(httprsp ->buff + httprsp ->currPos, (char **)NULL, 16) ;
+            httprsp ->currPos = 0 ;
+            httprsp ->currSz = 0 ;
+       }
+    }
+    do
+    {
+        int ret = readFully(httprsp ->rspfd, beg, 1) ;
+        if(ret != 1)
+        {
+            printf("chunk 数据格式错误") ;
+            return -1 ;
+        }
+        if(isxdigit(beg[0]) && flag == 0)
+        {
+            httprsp ->nextChunkSize = httprsp ->nextChunkSize*16 + (beg[0] >= '0' && beg[0] <= '9' ? beg[0] - '0' : toupper(beg[0] - 'A' + 10)) ;
+        }
+        else if (beg[0] == '\n' && flag == 1)
+        {
+            break ;
+        }
+        else if(flag == 0 && beg[0] == '\r')
+        {
+            flag = 1 ;
+        }
+        else
+        {
+            printf("chunk 数据格式错误\n") ; 
+            return -1 ;
+        }
+    }while(1) ;
+    return 0 ;
+}
 
 //响应头时chunked数据
 int readChunkedResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
@@ -425,60 +494,69 @@ int readChunkedResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
         return 0 ;
     }
     int nRecv = 0 ;
-    int nextLen = 0 ;
-    int flag = 0 ;
     while(sz != 0)
     {
         //缓冲区中有数据，且当前chunk还未读完
-        if(httprsp ->nextChunkSize != 0 && httprsp ->currSz != 0)
+        if(httprsp ->currSz != 0 && httprsp ->nextChunkSize != 0)
         {
-            int min = MIN(httprsp ->nextChunkSize, MIN(sz, httprsp ->currSz)) ;
-            memcpy((char *)buff + nRecv, httprsp ->buff + httprsp ->currPos, min) ;
+            int min = MIN(sz, httprsp ->currSz) ;
+            min = MIN(httprsp ->nextChunkSize, min) ;
+            memcpy(((char *)buff) + nRecv, httprsp ->buff + httprsp ->currPos, min) ;
             sz -= min ; 
             httprsp ->currSz -= min ; 
             httprsp ->nextChunkSize -= min ;
             httprsp ->currPos += min ;
             nRecv += min ;
         }
-        //缓冲区中无数据了
-        else if(httprsp ->currSz == 0)
+        //需要读取下一个chunk
+        else if(httprsp ->currSz == 0) 
         {
-            int min = MIN(httprsp ->nextChunkSize, MIN(sz, sizeof(httprsp ->buff)-1)) ;
-            //刚好缓冲区中无数据了，chunk也读完了
+            //chunk size为0 的话，开始读取下一个chun块
             if(httprsp ->nextChunkSize == 0)
             {
-               min = sz + 6 ; 
+                //非第一次读chunk数据，需要跳过数据尾部跟着的\r\n
+                if(httprsp ->chunkCount != 0)
+                {
+                    char end[3] = {0} ;
+                    //读出数据尾部结束标记的两个字节
+                    if(readFully(httprsp ->rspfd, end, 2) != 2 ||(end[0] != '\r' || end[1] != '\n'))
+                    {
+                        printf("chunk 数据格式错误\n") ;
+                        return -1;
+                    }
+                }
+                if(readChunkedLen(httprsp) != 0)
+                {
+                    return -1 ;
+                }
+                httprsp ->chunkCount += 1 ;
             }
-            int ret = readFully(httprsp ->rspfd, httprsp ->buff, min) ;
-            if(ret == 0)
+
+           //经过上面的处理之后，如果还是为0则表明是最后一个chunk了
+           if(httprsp ->nextChunkSize == 0)
+           {
+               return nRecv ;
+           }
+           //限制一次读取的数据不能超过chunk size中指定的大小
+           int min = MIN(sz, sizeof(httprsp ->buff)-1) ;
+           min = MIN(httprsp ->nextChunkSize, min) ;
+           int ret = readFully(httprsp ->rspfd, httprsp ->buff, min) ;
+           if(ret != min)
+           {
+               printf("read error\n") ;
+               return -1;
+           }
+           httprsp ->buff[ret] = '\0' ;
+           httprsp ->currSz = ret ;
+           httprsp ->currPos = 0 ;
+        }
+        else if(httprsp ->nextChunkSize == 0)
+        {
+            if(readChunkedLen(httprsp) != 0)
             {
                 return -1 ;
             }
-            httprsp ->buff[ret] = '\0' ;
-            httprsp ->currSz = ret ;
-            httprsp ->currPos = 0 ;
-        }
-        //需要重新处理缓冲区中的数据
-        else if(httprsp ->nextChunkSize == 0)
-        {
-            //chunk数据部分结束了，去掉\r\n,所以当前位置向前移动2个字节
-            httprsp ->currPos += 2 ; 
-            //查找部分chunk数据长度部分
-            char *p = strstr(httprsp ->buff + httprsp ->currPos, "\r\n") ;
-            if(p == NULL)
-            { 
-            }
-            httprsp ->nextChunkSize = strtol(httprsp ->buff + httprsp ->currPos, (char **)NULL, 16) ;
-            //chunk长度为0的表示结束
-            if(httprsp ->nextChunkSize == 0)
-            {
-                httprsp ->currSz = 0 ;
-                httprsp ->currPos = 0 ;
-                return nRecv ;
-            }
-            httprsp ->currSz -= p - (httprsp ->buff + httprsp ->currPos) + 2 ;
-            //+2是因为chunk长度部分使用的是\r\n分割的，真正的数据在其后，所以要跳过\r\n
-            httprsp ->currPos = p - httprsp ->buff + 2 ;
+            httprsp ->chunkCount += 1 ;
         }
     }
     return nRecv ;

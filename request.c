@@ -161,7 +161,6 @@ static HTTPRESPONSE *getResponse(int fd)
     {
         return NULL ;
     }
-    printf("read header [%s]\n", hdrbuff) ;
     HTTPRESPONSE *httprsp = initHttpResponse(MALLOC(sizeof(HTTPRESPONSE))) ;
     if(httprsp == NULL)
     {
@@ -171,12 +170,9 @@ static HTTPRESPONSE *getResponse(int fd)
     setResponseSocket(httprsp, fd) ;
     setResponseHeaderBuff(httprsp, hdrbuff, 0) ; 
     setResponseExtraData(httprsp, hdrbuff + hdrLen, totalLen - hdrLen) ;
-    int ret ; //= parseHttpResponseHeader(httprsp) ;
-    //printf("ret == %d\n", ret) ;
     if(parseHttpResponseHeader(httprsp) != 0)
     {
         printf("fail to parse http response header\n") ;
-        printf("ret = %d\n", ret) ;
         goto __fails ;
     }
     return httprsp ;

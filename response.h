@@ -27,6 +27,7 @@ typedef struct HTTPRESPONSE
 
    //transfer-encoding 为chunk时，记录距离下一个chunk还有多少数据要读
    int nextChunkSize ;
+   int chunkCount ;
    char buff[8192] ;
    int currSz ;
    int currPos ;
