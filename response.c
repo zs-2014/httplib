@@ -384,6 +384,15 @@ char *getTransferEncoding(HttpResponseHeader *httphdr, void *buff, int sz)
     return buff ;
 }
 
+COOKIE *getCookieFromResponse(HTTPRESPONSE *httprsp)
+{
+    if(httprsp == NULL)
+    {
+        return NULL ;
+    }
+    return NULL ;
+}
+
 //传输编码是否是chunked
 //chunked编码的格式如下
 /*chunked-len\r\n

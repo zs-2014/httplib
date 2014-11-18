@@ -96,14 +96,17 @@ static delOption(COOKIE *cookie, const char *option)
             }
         }
         //如果这个session选项在开头
-        else
+        else if (option_b[oplen] == ';')
         {
-            //这个逻辑有点问题
-           memset(option_b, 0, oplen) ; 
-           cookie ->currSize = 0 ;
+           memcpy(option_b, option_b + oplen + 1, cookie ->currSize - (oplen + 1)) ;
+           cookie ->currSize -= oplen + 1 ;
            return 0 ;
         }
-    }
+        else
+        {
+           option_b = strstr(option_b + oplen, option) ;
+        }
+   }
     return 0 ;
 }
 
@@ -210,62 +213,16 @@ int updateKey(COOKIE *cookie, const char *key, const char *newValue)
     }
     deleteKey(cookie, key) ;
     return addKeyValue(cookie, key, newValue) ;
-    //char *key_b = NULL ; 
-    //uint keyLen = strlen(key) ;
-    //char *val_b = NULL ;
-    //char *val_e = NULL ;
-    //search(cookie, key, &key_b, &val_b, &val_e) ;
-    //if(key_b == NULL)
-    //{
-    //    return addKeyValue(cookie, key, newValue) ;
-    //}
-    //int valLen = val_e - val_b ;
-    //int newValLen = strlen(newValue) ;
-    //if(cookie ->currSize + newValLen >= cookie ->size)
-    //{
-    //    if(reallocCookie(cookie, cookie ->currSize + newValLen + getGrow(cookie)) == NULL)
-    //    {
-    //        return -1 ;
-    //    }
-    //    return updateKey(cookie, key, newValue) ;
-    //}
-    // hello=world;xx=xxxx   ----->hello=word;xx=xxxx  currSize=12
-    //       |    |
-    //   val_b    val_e (val_e - val_b == 5) 
-    //                                                 val_e
-    //                                                 |
-    //memcpy(val_b, newVal, newValLen)  --->hello=wordd;xx=xxxx
-    //                                                |
-    //                                                (val_b + newValLen)
-    //                                                val_e - cookie ->cookieBuff == 11  
-    //                                      hello=wordd;  ->hello=word;xx=xxxxx
-    //memcpy(val_b + newValLen, val_e, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;
-    //cookie ->cookieBuff[cookie ->currSize] = '\0' ---> hello=word;xx=xxxx
-    //if(valLen > newValLen)
-    //{
-    //    memcpy(val_b, newValue, newValLen) ; 
-    //    memcpy(val_b + newValLen, val_e, cookie ->currSize - (val_e - cookie ->cookieBuff)) ;
-    //    cookie ->currSize -= valLen - newValLen ;
-    //    cookie ->cookieBuff[cookie ->currSize] = '\0';
-    //    return 0 ;
-    //}
-    //else if(valLen == newValLen)
-    //{
-    //    memcpy(val_b, newValue, valLen) ; 
-    //    return 0 ;
-    //}
-    //else
-    //{
-    //    char *end = cookie ->cookieBuff + cookie ->currSize ;  
-    //    while(end >= val_e)
-    //    {
-    //       end[newValLen-valLen] = *end ;
-    //       end-- ;
-    //    }
-    //    memcpy(val_b, newValue, newValLen) ;
-    //    cookie ->currSize += newValLen - valLen ; 
-    //}
-    //return 0 ;
+}
+
+int setPath(COOKIE *cookie, const char *path)
+{
+    return addKeyValue(cookie, "path", path) ;
+}
+
+int setDomain(COOKIE *cookie, const char *domain)
+{
+    return addKeyValue(cookie, "domain", domain) ;
 }
 
 int addSecureOption(COOKIE *cookie) 

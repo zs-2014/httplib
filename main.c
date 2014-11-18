@@ -94,11 +94,12 @@ void OptionTest()
 {
     COOKIE cookie ;
     initCookie(&cookie) ;
+    addHttponlyOption(&cookie) ;
+    printCookie(&cookie) ;
+
     addKeyValue(&cookie, "name", "zs") ;
     addSecureOption(&cookie) ;
     printCookie(&cookie);
-    addHttponlyOption(&cookie) ;
-    printCookie(&cookie) ;
     addKeyValue(&cookie, "name1", "zs") ;
 
     delHttponlyOption(&cookie) ;
@@ -125,10 +126,10 @@ void getValTest()
 
 int cookie_main(int argc, char *argv[])
 {
-    updateTest() ;
-    delTest() ;
-    addTest() ;
-    getValTest() ;
+    //updateTest() ;
+    //delTest() ;
+    //addTest() ;
+    //getValTest() ;
     OptionTest() ;
     return 0 ;
 }
@@ -368,6 +369,7 @@ int util_main(int argc,char *argv[])
 int main(int argc, char *argv[])
 {
     char buff[20] ;
-    request_main(argc, argv) ;
+    //request_main(argc, argv) ;
+    cookie_main(argc, argv) ;
     return 0 ;
 }
