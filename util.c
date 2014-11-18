@@ -93,6 +93,41 @@ static int connect_with_timeout(int clifd, struct sockaddr *addr, socklen_t addr
     return -1 ;
 }
 
+int createServerSocket(const char *ip, const char *port, int lsncnt)
+{ 
+    if(ip == NULL || port == NULL)
+    {
+        return -1 ;
+    }
+
+    struct addrinfo *result = NULL ;
+    struct addrinfo hints ;
+    hints.ai_family = AF_UNSPEC ;
+    hints.ai_protocol = 0 ;
+    hints.ai_socktype = SOCK_STREAM ;
+    hints.ai_addr = NULL ;
+    hints.ai_addrlen = 0 ;
+    hints.ai_next = NULL ;
+    hints.ai_flags = 0 ;
+    int ret = getaddrinfo(ip, port, &hints, &result) ;
+    struct addrinfo *tmp = result ;
+    int fd = -1 ;
+    for(tmp = result; tmp != NULL ;tmp = tmp ->ai_next)
+    {  
+        fd = socket(tmp ->ai_family, tmp ->ai_socktype, tmp ->ai_protocol) ;
+        if(fd == -1)
+            continue ;
+        if(bind(fd, tmp ->ai_addr, tmp ->ai_addrlen) == 0 && listen(fd, lsncnt > 0 ? lsncnt:5) == 0) 
+        {
+            break ;
+        }
+        close(fd) ;
+        fd = -1 ;
+    }
+    freeaddrinfo(result) ;
+    return fd ;
+}
+
 int connectToServer(const char *server, const char *port, int timeout)
 {
     if(server == NULL || port == NULL)  

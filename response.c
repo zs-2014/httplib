@@ -281,7 +281,6 @@ int setResponseExtraData(HTTPRESPONSE *httprsp, char *extraData, int sz)
     }
     httprsp ->currSz = MIN(sizeof(httprsp ->buff) - 1, sz) ;
     memcpy(httprsp ->buff, extraData, httprsp ->currSz) ;
-    printf("%s", httprsp ->buff) ;
     return 0 ;
 }
 

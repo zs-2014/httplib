@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 extern const char *casefind(const char *src, const char *needle) ;
+extern int createServerSocket(const char *ip, const char *port, int lsncnt) ;
 extern int connectToServer(const char *server, const char *port, int timeout) ;
 extern int sendData(int fd, const void *buff, int sz) ;
 extern int isStartWith(const char *src, const char *needle) ;

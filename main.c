@@ -304,8 +304,8 @@ int request_main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://git.qfpay.net/users/sign_in") ;
-    addRequestData(&request, "email", strlen("email"), "zhangshuang@qfpay.com", strlen("zhangshuang@qfpay.com")) ;
+    setHttpRequestUrl(&request,"http://172.100.102.153:12345/merchant/v1/login") ;
+    addRequestData(&request, "usernamee", strlen("username"), "15801026591", strlen("15801026591")) ;
     addRequestData(&request, "password", strlen("password"), "123qwe", strlen("123qwe")) ;
     //addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
 
