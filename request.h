@@ -9,6 +9,7 @@
 
 #define GET  0X00000001
 #define POST 0X00000002
+#define MAX_FILE_COUNT  100
 
 typedef struct HttpRequest
 {
@@ -19,13 +20,19 @@ typedef struct HttpRequest
     DATA data;
     int method;
     char version[4] ;
+    //POST文件的时候需要用到boundry
+    char boundary[50] ;
+
+    //上传文件时得记录文件名称
+    char *filename[100] ;
+    int currFileCount ;
 } HTTPREQUEST;
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-extern HTTPRESPONSE* sendRequest(HTTPREQUEST *httpreq, int method, int timeout) ;
+extern HTTPRESPONSE* sendRequest(HTTPREQUEST *httpreq, int timeout) ;
 extern HTTPRESPONSE* sendRequestWithGET(HTTPREQUEST *httpreq, int timeout) ;
 extern HTTPRESPONSE* sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout) ;
 extern int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const uchar *val, int valSz) ;

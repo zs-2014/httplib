@@ -254,6 +254,35 @@ int sendData(int fd, const void *buff, int sz)
     return nSend ;
 }
 
+int writeAll(int fd, void *buff, int sz)
+{
+    if(fd < 0 || buff == NULL || sz == 0) 
+    {
+        return 0 ; 
+    }
+    int nSend = 0 ;
+    do
+    {
+        int ret = write(fd, ((char *)buff) + nSend, sz - nSend) ;
+        if(ret + nSend == sz)  
+        {
+            return sz ;
+        }
+        else if(ret > 0)
+        {
+            nSend += ret;
+        }
+        else
+        {
+            if(errno == EINTR)
+            {
+                continue ;
+            }
+            return -1 ;
+        }
+    }while(1) ;
+}
+
 int readFully(int fd, void *buff, int sz)
 {
     if(fd < 0 || buff == NULL || sz == 0) 
@@ -283,6 +312,7 @@ int readFully(int fd, void *buff, int sz)
     }
     return nRecv ;
 }
+
 char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
 {
     if(fd < 0 || totalLen == NULL || len == NULL) 

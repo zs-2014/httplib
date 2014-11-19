@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "cookie.h"
 #include "response.h"
 #include "util.h"
 #include "global.h"
