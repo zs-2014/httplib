@@ -13,7 +13,7 @@ extern int sendData(int fd, const void *buff, int sz) ;
 extern int isStartWith(const char *src, const char *needle) ;
 extern int writeAll(int fd, void *buff, int sz) ;
 extern int readFully(int fd, void *buff, int sz) ;
-extern char *itoa(int num, char *buff) ;
+extern char *itoa(int64_t num, char *buff) ;
 extern char *readUntil(int fd, int *totalLen, int *len, const char *flagstr) ;
 #ifdef __cplusplus
 };

@@ -12,6 +12,7 @@
 #define MIN(a, b) (a) > (b) ? (b):(a)
 
 
+typedef long long uint64 ;
 typedef unsigned int uint ;
 typedef unsigned char uchar ;
 

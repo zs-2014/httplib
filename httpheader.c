@@ -146,10 +146,12 @@ const char *header2String(HEADER *httphdr)
 {
     return httphdr != NULL ? (httphdr ->currSz == 0 ? nullStrPtr : httphdr ->hdrBuff) : nullStrPtr ;
 }
+
 uint headerLen(HEADER *httphdr)
 {
     return httphdr != NULL ? httphdr ->currSz : 0 ;
 }
+
 int hasHeader(HEADER *httphdr, const char *key) 
 {
     if(httphdr == NULL || key == NULL || httphdr ->hdrBuff == NULL)

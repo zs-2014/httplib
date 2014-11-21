@@ -120,11 +120,20 @@ int setHttpVersion(HTTPREQUEST *httpreq, const char *version)
 
 int addRequestHeader(HTTPREQUEST *httpreq, const char *key, const char *value)
 {
+
     if(httpreq == NULL) 
     {
         return -1 ;
     }
-    return addHeader(&httpreq ->header, key, value); 
+    if(!hasHeader(&httpreq ->header, key, value))
+    {
+        return addHeader(&httpreq ->header, key, value); 
+    }
+    else
+    {
+        return 0 ;
+    }
+
 }
 
 int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const uchar *val, int valSz)
@@ -305,28 +314,63 @@ static int makeHeader(HTTPREQUEST *httpreq, BUFFER *buff, int method)
         {
             produceBoundary(httpreq) ;
             char buff[1024] = {0} ;
-            strcpy(buff, "multipart/fixed;boundary=") ;
+            strcpy(buff, "multipart/form-data; boundary=") ;
             strcat(buff, httpreq ->boundary) ;
             addRequestHeader(httpreq, "Content-Type", buff) ;
+            addRequestHeader(httpreq, "Content-Length", "341") ;
         }
     }
     addDefaultRequestHeader(httpreq) ;    
     appendBuffer(buff, header2String(&httpreq ->header), headerLen(&httpreq ->header)) ;
     appendBuffer(buff, "\r\n", 2) ;
+    printf("buff header = [%s]", buff ->buff) ;
     return 0 ;
 }
-
-static int makeBody(HTTPREQUEST *httpreq, BUFFER *buff, int method)
+static int makeBodyWithForm(HTTPREQUEST *httpreq, BUFFER *buff)
 {
-    if(method == POST && !isEmpty(&httpreq ->data))
+
+#define ADD_BOUNDARY  do {appendBuffer(buff, "--", 2) ;\
+                      appendBuffer(buff, httpreq ->boundary, strlen(httpreq ->boundary)) ;\
+                      appendBuffer(buff, "\r\n", 2);}while(0) ;
+
+#define CONTENT_DISPOSITION  "Content-Disposition: form-data; name=\""
+#define CONTENT_TYPE         "Content-Type: text/plain; charset=utf-8\r\n"
+#define CONTENT_ENCODING     "Content-Transfer-Encoding:8bit\r\n"
+
+    if(httpreq == NULL || buff == NULL)
     {
-        if(httpreq ->currFileCount != 0)
-        {
-            appendBuffer(buff, "--", 2) ;
-            appendBuffer(buff, httpreq ->boundary, strlen(httpreq ->boundary)) ;
-            appendBuffer(buff, "\r\n", 2) ;
-            appendBuffer(buff, "Content-Type:application/x-www-form-urlencoded\r\n", strlen("Content-Type:application/x-www-form-urlencoded\r\n")) ;
-        }
+        return -1 ;
+    }
+
+    int totalLen = buff ->currSz ;
+    if(!isEmpty(&httpreq ->data))
+    {
+       FOREACH(key, val, &httpreq ->data) 
+       {
+           ADD_BOUNDARY 
+           appendBuffer(buff, CONTENT_DISPOSITION, strlen(CONTENT_DISPOSITION)) ;
+           appendBuffer(buff, key, strlen(key)) ;
+           appendBuffer(buff, "\"\r\n\r\n", 5) ;
+           if(val != NULL)
+           {
+                appendBuffer(buff, val, strlen(val)) ;
+           }
+           appendBuffer(buff, "\r\n", 2) ;
+       }
+       appendBuffer(buff, "--", 2) ;
+       appendBuffer(buff, httpreq ->boundary, strlen(httpreq ->boundary)) ;
+       appendBuffer(buff, "--\r\n", 4) ;
+       buff ->buff[buff ->currSz] = 0 ;
+    }
+    printf("body = \n%s", buff ->buff) ;
+    printf("total len = %d\n", buff ->currSz - totalLen) ;
+    return 0  ;
+}
+
+static int makeBodyWithUrlencode(HTTPREQUEST *httpreq, BUFFER *buff)
+{
+    if(!isEmpty(&httpreq ->data))
+    {
         FOREACH(key, val, &httpreq ->data)
         {
             appendBuffer(buff, key, strlen(key)) ;
@@ -338,12 +382,28 @@ static int makeBody(HTTPREQUEST *httpreq, BUFFER *buff, int method)
             appendBuffer(buff, "&", 1) ;
         }
         lstripBuffer(buff, '&') ; 
-        if(httpreq ->currFileCount != 0)
-        {
-            appendBuffer(buff, "--", 2) ;
-            appendBuffer(buff, httpreq ->boundary, strlen(httpreq ->boundary)) ;
-            appendBuffer(buff, "\r\n", 2) ;
-        }
+    }
+    printf("body = [%s]", buff ->buff) ;
+    return 0 ;
+}
+
+static int makeBody(HTTPREQUEST *httpreq, BUFFER *buff, int method)
+{ 
+    if(method != POST)
+    {
+        return 0 ;
+    }
+    if(httpreq == NULL || buff == NULL)
+    {
+        return -1 ;
+    }
+    if(httpreq ->currFileCount == 0)
+    {
+        return makeBodyWithUrlencode(httpreq, buff) ;
+    }
+    else
+    {
+        return makeBodyWithForm(httpreq, buff) ;
     }
     return 0 ;
 }
@@ -366,7 +426,7 @@ static int postFile(HTTPREQUEST *httpreq, int sockfd)
    char buff[8192] = {0} ;
    int offset = 0 ;
    int blen = strlen(httpreq ->boundary) ;
-   for(i = 0 ;i < httpreq ->currFileCount ;i++)
+   for(i = 0; i < httpreq ->currFileCount; i++)
    {
         int fd = open(httpreq ->filename[i], O_RDONLY) ;
         if(fd < 0)
@@ -377,24 +437,24 @@ static int postFile(HTTPREQUEST *httpreq, int sockfd)
         struct stat st ;
         memset(&st, 0, sizeof(st)) ;
         fstat(fd, &st) ;
-        if(st.st_size <= 0)
+        if(st.st_size == 0)
         {
             printf("%s size is 0 skip it\n", httpreq ->filename[i]) ;
             close(fd) ;
             continue ;
         }
         //开头为--boundary
-        strcpy(buff + offset, "--") ;
-        offset += 2 ;
-        strcpy(buff + offset, httpreq ->boundary) ;
-        offset += blen ;
+        //strcpy(buff + offset, "--") ;
+        //offset += 2 ;
+        //strcpy(buff + offset, httpreq ->boundary) ;
+        //offset += blen ;
         //增加Content-Disposition 和Content-Type
-        strcpy(buff + offset, "Content-Disposition:form-data;name=\"file\";filename=\"") ;
-        offset += strlen("Content-Disposition:form-data;name=\"file\";filename=\"") ;
+        strcpy(buff + offset, "Content-Disposition:form-data;name=file;filename=") ;
+        offset += strlen("Content-Disposition:form-data;name=file;filename=") ;
         strcpy(buff + offset, httpreq ->filename[i]) ;
         offset += strlen(httpreq ->filename[i]) ;
-        strcpy(buff + offset, "\"\r\n") ;
-        offset += 3 ;
+        strcpy(buff + offset, "\r\n") ;
+        offset += 2 ;
         strcpy(buff + offset, "Content-Type:application/octet-stream\r\n") ;
         offset += strlen("Content-Type:application/octet-stream\r\n") ;  
         int ret = 0 ;
@@ -413,7 +473,7 @@ static int postFile(HTTPREQUEST *httpreq, int sockfd)
         strcpy(buff + offset, httpreq ->boundary) ;
         offset += blen ;
    }
-   //最后一个要添加一个
+   //最后一个要在boundary后面添加--
    strcpy(buff + offset, "--") ;
    if(writeAll(sockfd, buff, offset) != offset)
    {
@@ -444,11 +504,11 @@ HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int timeout)
         printf("send [%s] fail\n", getBufferData(&buff)) ;
     }
     freeBuffer(&buff) ;
-    if(postFile(httpreq, fd) != 0)
-    {
-        printf("fail to post file\n") ;
-        return NULL ;
-    }
+    //if(postFile(httpreq, fd) != 0)
+    //{
+     //   printf("fail to post file\n") ;
+      //  return NULL ;
+    //}
     return getResponse(fd) ;
 }
 

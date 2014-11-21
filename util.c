@@ -180,7 +180,7 @@ const char *casefind(const char *src, const char *needle)
     return NULL ;
 }
 
-char *itoa(int num, char *buff)
+char *itoa(int64_t num, char *buff)
 {
     if(buff == NULL) 
     {

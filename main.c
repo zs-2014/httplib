@@ -305,11 +305,12 @@ int request_main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://172.100.102.153:12345/merchant/v1/login") ;
-    addRequestData(&request, "usernamee", strlen("username"), "15801026591", strlen("15801026591")) ;
-    addRequestData(&request, "password", strlen("password"), "123qwe", strlen("123qwe")) ;
-    //addRequestData(&request, "name", strlen("name"), "", strlen("")) ;
-
+    setHttpRequestUrl(&request,"http://172.100.102.153:9393/util/v1/uploadfile") ;
+    addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
+    addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
+    addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
+    addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
+    addPostFile(&request, "/home/zhangshuang/openapi/1/storage/userprofile/1/10000/showcase/238902df90ca59748277df89d641e661.jpg") ;
     HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
     if(rsp == NULL)
     {
@@ -369,7 +370,7 @@ int util_main(int argc,char *argv[])
 int main(int argc, char *argv[])
 {
     char buff[20] ;
-    //request_main(argc, argv) ;
-    cookie_main(argc, argv) ;
+    request_main(argc, argv) ;
+    //cookie_main(argc, argv) ;
     return 0 ;
 }
