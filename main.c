@@ -305,16 +305,18 @@ int request_main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://172.100.102.153:9393/util/v1/uploadfile") ;
+    //setHttpRequestUrl(&request,"http://172.100.102.153:9393/util/v1/uploadfile") ;
+    setHttpRequestUrl(&request,"http://192.168.182.131:8080/util/v1/uploadfile") ;
     addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
     addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
     addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
     addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
-    addPostFile(&request, "/home/zhangshuang/openapi/1/storage/userprofile/1/10000/showcase/238902df90ca59748277df89d641e661.jpg") ;
+    addPostFile(&request, "/root/main.cpp") ;
     HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
     if(rsp == NULL)
     {
         printf("fail to parse the http response \n") ;
+        return -1 ;
     }
     char buff[10250] = {0} ;
     //int ret = readFully(rsp ->rspfd, buff, sizeof(buff)-1) ;

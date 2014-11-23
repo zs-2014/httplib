@@ -14,6 +14,7 @@ typedef struct Data
     __DATA *data ;
     uint currSz ;
     uint size ;
+    uint dataLen ;
 }DATA;
 
 #define FOREACH(name, value, dataobj) \

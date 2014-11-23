@@ -4,8 +4,8 @@
 #include "urlencode.h"
 
 #define SAFE     0X00000001
-#define UNSAFE   0X00000010
-#define RESERVED 0X00000100
+#define UNSAFE   0X00000002
+#define RESERVED 0X00000003
 #define IS_SAFE(x) (ascii_map[x]&SAFE)
 #define IS_UNSAFE(x) (ascii_map[x]&UNSAFE)
 #define IS_RESERVED(x) (ascii_map[x]&RESERVED)

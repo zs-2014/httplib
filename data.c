@@ -55,8 +55,14 @@ static int  __freeData(__DATA *data)
 {
     if(data != NULL)
     {
-        FREE(data ->key) ;
-        FREE(data ->val) ;
+        if(data ->key != NULL)
+        {
+            FREE(data ->key) ;
+        }
+        if(data ->val != NULL)
+        {
+            FREE(data ->val) ;
+        }
     }
     return 0 ;
 }
@@ -78,14 +84,7 @@ int freeData(DATA *data)
     int i = 0 ;
     for(i = 0 ; i < data ->currSz; i++)
     {
-        if(data ->data[i].key)
-        {
-            FREE(data ->data[i].key) ;
-        }
-        if(data ->data[i].val)
-        {
-            FREE(data ->data[i].val) ;
-        }
+        __freeData(data ->data + i) ;
     }
     FREE(data ->data) ;
     data ->data = NULL ;
@@ -105,6 +104,7 @@ int addData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz
     data ->data[data ->currSz].key = quotebuff(key, keySz, NULL) ;
     data ->data[data ->currSz].val = quotebuff(val, valSz, NULL) ;
     data ->currSz += 1;
+    data ->dataLen += keySz + valSz ;
 }
 
 int deleteData(DATA *data, const uchar *key, int keySz) 

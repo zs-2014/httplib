@@ -35,6 +35,7 @@ extern "C" {
 extern HTTPRESPONSE* sendRequest(HTTPREQUEST *httpreq, int timeout) ;
 extern HTTPRESPONSE* sendRequestWithGET(HTTPREQUEST *httpreq, int timeout) ;
 extern HTTPRESPONSE* sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout) ;
+extern int setBoundary(HTTPREQUEST *httpreq, char *boundary) ;
 extern int addPostFile(HTTPREQUEST *httpreq, const char *filename) ;
 extern int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const uchar *val, int valSz) ;
 extern int addRequestHeader(HTTPREQUEST *httpreq, const char *key, const char *value) ;

@@ -125,7 +125,7 @@ int addRequestHeader(HTTPREQUEST *httpreq, const char *key, const char *value)
     {
         return -1 ;
     }
-    if(!hasHeader(&httpreq ->header, key, value))
+    if(!hasHeader(&httpreq ->header, key))
     {
         return addHeader(&httpreq ->header, key, value); 
     }
@@ -234,9 +234,20 @@ __fails:
    return NULL ;
 }
 
+//设置边界
+int setBoundary(HTTPREQUEST *httpreq, char *boundary)
+{
+   if(httpreq == NULL || boundary == NULL) 
+   {
+        return -1 ;
+   }
+   memcpy(httpreq ->boundary, boundary, MIN(strlen(boundary), sizeof(httpreq ->boundary)-1)) ;
+   return 0 ;
+}
+
 static char *produceBoundary(HTTPREQUEST *httpreq)
 {
-    if(httpreq == NULL) 
+    if(httpreq == NULL || strlen(httpreq ->boundary) != 0) 
     {
         return NULL ;
     }
@@ -279,6 +290,7 @@ static int makeHeader(HTTPREQUEST *httpreq, BUFFER *buff, int method)
         appendBuffer(buff, url ->query, strlen(url ->query)) ;
         appendBuffer(buff, "&", 1) ;
     }
+    //如果是GET方法的话，data部分应该放到url中
     if(method == GET && !isEmpty(&httpreq ->data))
     {
         FOREACH(key, val, &httpreq ->data)
@@ -317,6 +329,7 @@ static int makeHeader(HTTPREQUEST *httpreq, BUFFER *buff, int method)
             strcpy(buff, "multipart/form-data; boundary=") ;
             strcat(buff, httpreq ->boundary) ;
             addRequestHeader(httpreq, "Content-Type", buff) ;
+            //上传文件一定得加上Content-Length，否则无法解析出来
             addRequestHeader(httpreq, "Content-Length", "341") ;
         }
     }
@@ -497,6 +510,7 @@ HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int timeout)
     int fd = connectToServer(url->host, url ->port == NULL ?DEFAULT_PORT:url ->port, timeout) ;
     if(fd < 0)
     {
+       perror("fd < 0") ;
        return NULL; 
     }
     if(sendData(fd, getBufferData(&buff), getBufferSize(&buff)) != getBufferSize(&buff))
