@@ -25,6 +25,7 @@ typedef struct HttpRequest
 
     //上传文件时得记录文件名称
     char *filename[100] ;
+    char *name[100] ;
     int currFileCount ;
 } HTTPREQUEST;
 #ifdef __cplusplus
@@ -32,11 +33,11 @@ extern "C" {
 #endif
 
 
-extern HTTPRESPONSE* sendRequest(HTTPREQUEST *httpreq, int timeout) ;
+extern HTTPRESPONSE *sendRequest(HTTPREQUEST *httpreq, int timeout, int method);
 extern HTTPRESPONSE* sendRequestWithGET(HTTPREQUEST *httpreq, int timeout) ;
 extern HTTPRESPONSE* sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout) ;
 extern int setBoundary(HTTPREQUEST *httpreq, char *boundary) ;
-extern int addPostFile(HTTPREQUEST *httpreq, const char *filename) ;
+extern int addPostFile(HTTPREQUEST *httpreq, const char *name, const char *filename) ;
 extern int addRequestData(HTTPREQUEST *httpreq, const uchar *key, int keySz, const uchar *val, int valSz) ;
 extern int addRequestHeader(HTTPREQUEST *httpreq, const char *key, const char *value) ;
 extern int setHttpVersion(HTTPREQUEST *httpreq, const char *version) ;

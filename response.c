@@ -566,6 +566,10 @@ int readChunkedResponse(HTTPRESPONSE *httprsp, void *buff, int sz)
                 return -1 ;
             }
             httprsp ->chunkCount += 1 ;
+            if(httprsp ->nextChunkSize == 0)
+            {
+                return nRecv ;
+            }
         }
     }
     return nRecv ;

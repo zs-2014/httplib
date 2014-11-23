@@ -94,6 +94,15 @@ const uchar* getBufferData(const BUFFER *buff)
     return buff != NULL ? (buff ->currSz == 0 ? (uchar *)nullStrPtr : buff ->buff) : (uchar *)nullStrPtr ;
 }
 
+int dropData(BUFFER *buff, uint sz) 
+{
+    if(buff != NULL)
+    {
+       buff ->currSz = buff ->currSz > sz ? buff ->currSz - sz:0 ;
+    }
+    return 0 ;
+}
+
 uint getBufferSize(const BUFFER *buff) 
 {
    return buff == NULL ? 0 : buff ->currSz ; 

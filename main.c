@@ -311,7 +311,7 @@ int request_main(int argc, char *argv[])
     addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
     addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
     addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
-    addPostFile(&request, "/root/main.cpp") ;
+    addPostFile(&request, "file", "/root/main.cpp") ;
     HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
     if(rsp == NULL)
     {
