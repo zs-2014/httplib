@@ -213,6 +213,7 @@ static HTTPRESPONSE *getResponse(int fd)
     int totalLen = 0 ;
     int hdrLen = 0 ;
     char *hdrbuff = readUntil(fd, &totalLen, &hdrLen, "\r\n\r\n") ;
+    printf("%s", hdrbuff) ;
     if(hdrbuff == NULL)
     {
         return NULL ;
@@ -381,13 +382,14 @@ static int buildFormData(HTTPREQUEST *httpreq, int sockfd, BUFFER *buff, int iss
     if(issend == 0)
     {
         dropData(buff, len) ;
-        return len - currSz ;
+        return len ;
     }
     if(writeAll(sockfd, getBufferData(buff), getBufferSize(buff)) != getBufferSize(buff))
     {
         perror("fail to send data\n") ;
         return -1 ;
     }
+    printf("%s", getBufferData(buff)) ;
     return 0 ;
 }
 
@@ -414,63 +416,80 @@ static int64_t buildBodyFromFile(HTTPREQUEST *httpreq, int sockfd, int issend)
          * \r\n
          * ........\r\n
          */
-        strcpy(buff + offset, "--") ;
-        offset += 2 ;
-        strcpy(buff + offset, httpreq ->boundary) ;        
-        offset += strlen(httpreq ->boundary) ; 
-        strcpy(buff + offset, "\r\n") ;
-        offset += 2 ;
+         int ret = snprintf(buff + offset, sizeof(buff)-offset, "--%s\r\n"
+                                                                 "content-disposition:form-data;name=\"%s\";filename=\"%s\"\r\n"
+                                                                 "content-type:application/octet-stream\r\n"
+                                                                 "content-transfer-encoding:8bit\r\n"
+                                                                 "\r\n", httpreq ->boundary, httpreq ->name[i], httpreq ->filename[i]) ;
+        if(ret < 0)
+        {
+            printf("fail to format the data\n") ;
+            return -1 ;
+        }
+        offset += ret ;
+        //strcpy(buff + offset, "--") ;
+        //offset += 2 ;
+        //strcpy(buff + offset, httpreq ->boundary) ;        
+        //offset += strlen(httpreq ->boundary) ; 
+        //strcpy(buff + offset, "\r\n") ;
+        //offset += 2 ;
 
-        strcpy(buff + offset, CONTENT_DISPOSITION) ;
-        offset += strlen(CONTENT_DISPOSITION) ;
-        strcpy(buff + offset, httpreq ->name[i]) ;
-        offset += strlen(httpreq ->name[i]) ;
-        strcpy(buff + offset, "\"") ;
-        offset += 1 ;
-        strcpy(buff + offset, ";filename=\"") ;
-        offset += strlen(";filename=\"") ;
-        strcpy(buff + offset, httpreq ->filename[i]) ;
-        offset += strlen(httpreq ->filename[i]) ;
-        strcpy(buff + offset, "\"\r\n") ;
-        offset += strlen("\"\r\n");
-        strcpy(buff + offset, "Content-Type:application/octet-stream\r\n") ;
-        offset += strlen("Content-Type:application/octet-stream\r\n") ;
-        strcpy(buff + offset, "Content-Transfer-Encoding:8bit\r\n\r\n") ;
-        offset += strlen("Content-Transfer-Encoding:8bit\r\n\r\n") ; 
+        //strcpy(buff + offset, CONTENT_DISPOSITION) ;
+        //offset += strlen(CONTENT_DISPOSITION) ;
+        //strcpy(buff + offset, httpreq ->name[i]) ;
+        //offset += strlen(httpreq ->name[i]) ;
+        //strcpy(buff + offset, "\"") ;
+        //offset += 1 ;
+        //strcpy(buff + offset, ";filename=\"") ;
+        //offset += strlen(";filename=\"") ;
+        //strcpy(buff + offset, httpreq ->filename[i]) ;
+        //offset += strlen(httpreq ->filename[i]) ;
+        //strcpy(buff + offset, "\"\r\n") ;
+        //offset += strlen("\"\r\n");
+        //strcpy(buff + offset, "Content-Type:application/octet-stream\r\n") ;
+        //offset += strlen("Content-Type:application/octet-stream\r\n") ;
+        //strcpy(buff + offset, "Content-Transfer-Encoding:8bit\r\n\r\n") ;
+        //offset += strlen("Content-Transfer-Encoding:8bit\r\n\r\n") ; 
+        struct stat st ;
+        if(stat(httpreq ->filename[i], &st) == -1)
+        {
+            perror("fail to get fail size") ;
+            return -1 ; 
+        }
         if(issend == 0)
         {
-            struct stat st ;
-            if(stat(httpreq ->filename[i], &st) == -1)
-            {
-               return -1 ; 
-            }
             fileLen += offset ;
             //文件内容后面需要跟上 \r\n，所以需要+2
             fileLen += st.st_size + 2;
+            offset = 0 ;
             continue ;
         }
-        int ret = 0 ;
         int fd = open(httpreq ->filename[i], O_RDONLY);
         if(fd < 0)
         {
             return -1 ;
         }
-        while((ret = readFully(fd, buff + offset, sizeof(buff)-offset)) != 0)
+        //可以使用sendfile
+        buff[offset] = 0 ;
+        printf("%s", buff) ;
+        do
         {
+            ret = readFully(fd, buff + offset, sizeof(buff)-offset);
             if(ret < 0)
             {
                 close(fd);
                 return -1 ;
             }
+            st.st_size -= ret ;
             ret += offset ;
-            offset += 0 ;
+            offset = 0 ;
             if(writeAll(sockfd, buff, ret) != ret)
             {
                perror("error\n") ; 
                close(fd);
                return -1 ;
             }
-        }
+        }while(st.st_size > 0) ;
         close(fd); 
         strcpy(buff + offset, "\r\n") ;
         offset += 2 ;
@@ -484,6 +503,7 @@ static int64_t buildBodyFromFile(HTTPREQUEST *httpreq, int sockfd, int issend)
        perror("error\n") ; 
        return -1 ;
     }
+    printf("%s", buff) ;
     return 0 ;
 }
 
@@ -505,6 +525,7 @@ static int64_t buildBody(HTTPREQUEST *httpreq, int sockfd, BUFFER *buff, int iss
        //--boundary--\r\n 
        return fileLen + formdataLen + 2 + boundaryLen + 2 + 2 ;
     } 
+    //数据传送完毕，发送结束标记 --boundary--\r\n
     char endData[1024] = {0} ;
     strcpy(endData, "--") ;
     strcat(endData, httpreq ->boundary) ;
@@ -513,6 +534,7 @@ static int64_t buildBody(HTTPREQUEST *httpreq, int sockfd, BUFFER *buff, int iss
     {
         return -1 ;
     }
+    printf("%s", endData) ;
     return 0 ;
 }
 
@@ -539,7 +561,6 @@ HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
         appendBuffer(&buff, url ->query, strlen(url ->query)) ;
         appendBuffer(&buff, "&", 1) ;
     }
-    //如果是GET方法的话，data部分应该放到url中
     lstripBuffer(&buff, '&') ;
     lstripBuffer(&buff, '?') ;
     appendBuffer(&buff, " ", 1) ;
@@ -564,7 +585,12 @@ HTTPRESPONSE *sendRequestWithPOST(HTTPREQUEST *httpreq, int timeout)
        perror("fd < 0") ;
        return NULL; 
     }
-    buildBody(httpreq, fd, &buff, 1) ;
+    if(buildBody(httpreq, fd, &buff, 1) != 0) 
+    {
+        printf("fail to build body\n") ;
+        freeBuffer(&buff) ;
+        return NULL ;
+    }
     freeBuffer(&buff) ;
     return getResponse(fd) ;
 }

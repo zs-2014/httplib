@@ -436,7 +436,34 @@ static int readChunkedLen(HTTPRESPONSE *httprsp)
     {
         if(httprsp ->chunkCount != 0)
         {
-            httprsp ->currPos += 2 ;
+            if(httprsp ->buff[httprsp ->currPos] == '\r')
+            {  
+                httprsp ->currPos += 1 ;
+            }
+            else
+            {
+                printf("chunk 数据格式错误\r\n") ;
+                return -1 ;
+            }
+            if(httprsp ->currPos < httprsp ->currSz && httprsp ->buff[httprsp ->currPos] == '\n')
+            {
+                httprsp ->currPos += 1 ;
+            }
+            //需要跳过\n
+            else if(httprsp ->currPos >= httprsp ->currSz)
+            {
+               char lf[2] = {0} ;
+               if(readFully(httprsp ->rspfd, lf, 1) != 1 || lf[0] != '\n')
+               {
+                    printf("chunk 数据格式错误\n") ;
+                    return -1 ;
+               }
+            }
+            else if(httprsp ->currPos < httprsp ->currSz)
+            {
+                printf("chunk 数据格式错误\n") ;
+                return -1 ;
+            }
         }
         char *p = strchr(httprsp ->buff + httprsp ->currPos, '\r') ; 
         if(p != NULL)
@@ -476,7 +503,7 @@ static int readChunkedLen(HTTPRESPONSE *httprsp)
         }
         if(isxdigit(beg[0]) && flag == 0)
         {
-            httprsp ->nextChunkSize = httprsp ->nextChunkSize*16 + (beg[0] >= '0' && beg[0] <= '9' ? beg[0] - '0' : toupper(beg[0] - 'A' + 10)) ;
+            httprsp ->nextChunkSize = httprsp ->nextChunkSize*16 + (beg[0] >= '0' && beg[0] <= '9' ? beg[0] - '0' : toupper(beg[0]) - 'A' + 10) ;
         }
         else if (beg[0] == '\n' && flag == 1)
         {

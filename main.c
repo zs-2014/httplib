@@ -305,13 +305,13 @@ int request_main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    //setHttpRequestUrl(&request,"http://172.100.102.153:9393/util/v1/uploadfile") ;
-    setHttpRequestUrl(&request,"http://192.168.182.131:8080/util/v1/uploadfile") ;
+    setHttpRequestUrl(&request,"http://172.100.101.106:9393/util/v1/uploadfile") ;
     addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
     addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
     addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
     addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
-    addPostFile(&request, "file", "/root/main.cpp") ;
+    addPostFile(&request, "file", "small.jpg") ;
+    addPostFile(&request, "file1", "/home/zhangshuang/info.log") ;
     HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
     if(rsp == NULL)
     {
