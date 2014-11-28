@@ -385,7 +385,7 @@ char *getTransferEncoding(HttpResponseHeader *httphdr, void *buff, int sz)
     return buff ;
 }
 
-COOKIE *getCookieFromResponse(HTTPRESPONSE *httprsp)
+COOKIE *getCookieFromResponse(HTTPRESPONSE *httprsp, int num)
 {
     if(httprsp == NULL)
     {
