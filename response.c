@@ -434,6 +434,7 @@ static int readChunkedLen(HTTPRESPONSE *httprsp)
     //读取chunk头 并获取长度
     if(httprsp ->currSz != 0)
     {
+        //如果不是第一个头，则跳过后面的\r\n
         if(httprsp ->chunkCount != 0)
         {
             if(httprsp ->buff[httprsp ->currPos] == '\r')
@@ -445,12 +446,12 @@ static int readChunkedLen(HTTPRESPONSE *httprsp)
                 printf("chunk 数据格式错误\r\n") ;
                 return -1 ;
             }
-            if(httprsp ->currPos < httprsp ->currSz && httprsp ->buff[httprsp ->currPos] == '\n')
+            if(httprsp ->buff[httprsp ->currPos] == '\n')
             {
                 httprsp ->currPos += 1 ;
             }
             //需要跳过\n
-            else if(httprsp ->currPos >= httprsp ->currSz)
+            else if(httprsp ->buff[httprsp ->currPos] == '\0')
             {
                char lf[2] = {0} ;
                if(readFully(httprsp ->rspfd, lf, 1) != 1 || lf[0] != '\n')
@@ -459,7 +460,7 @@ static int readChunkedLen(HTTPRESPONSE *httprsp)
                     return -1 ;
                }
             }
-            else if(httprsp ->currPos < httprsp ->currSz)
+            else
             {
                 printf("chunk 数据格式错误\n") ;
                 return -1 ;
