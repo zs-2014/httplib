@@ -12,6 +12,7 @@
 #include "httpheader.h"
 #include "request.h"
 #include "response.h"
+#include "log.h"
 
 int printCookie(COOKIE *cookie)
 {
@@ -71,7 +72,6 @@ void delTest()
     printCookie(&cookie) ;
 
     freeCookie(&cookie) ;
-
 }
 
 void addTest()
@@ -305,14 +305,15 @@ int request_main(int argc, char *argv[])
 {
     HTTPREQUEST request ;
     initHttpRequest(&request) ;
-    setHttpRequestUrl(&request,"http://172.100.101.106:9393/util/v1/uploadfile") ;
-    addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
-    addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
-    addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
-    addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
-    addPostFile(&request, "file", "small.jpg") ;
-    addPostFile(&request, "file1", "/home/zhangshuang/info.log") ;
-    HTTPRESPONSE *rsp = sendRequestWithPOST(&request, -1) ;
+    //setHttpRequestUrl(&request,"http://172.100.101.106:9393/util/v1/uploadfile") ;
+    setHttpRequestUrl(&request,"http://search.jd.com/Search?keyword=http%E5%8D%8F%E8%AE%AE&enc=utf-8&suggest=1") ;
+    //addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
+    //addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
+    //addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
+    //addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
+    //addPostFile(&request, "file", "small.jpg") ;
+    //addPostFile(&request, "file1", "/home/zhangshuang/info.log") ;
+    HTTPRESPONSE *rsp = sendRequestWithGET(&request, -1) ;
     if(rsp == NULL)
     {
         printf("fail to parse the http response \n") ;
@@ -367,6 +368,12 @@ int util_main(int argc,char *argv[])
     FREE(bff) ;
     perror("error msg") ;
 	return 0 ;
+}
+
+int log_main(int argc, char *argv)
+{
+    
+    return 0 ;
 }
 
 int main(int argc, char *argv[])

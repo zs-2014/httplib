@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "log.h"
+#include "util.h"
 
 static void free_logger(logger *lgr)
 {
@@ -100,8 +101,20 @@ static int write_file_stream(stream *stm, LOG_LEVEL lvl, void *data, int size)
     if(stm == NULL || data == NULL || size < 0) 
     {
         return -1 ;
+    } 
+    struct stat st ;
+    //文件不存在了或者文件被移动了，那么需要重新打开
+    if(stat(stm ->file_stm.file_name, &st) == -1 || st.st_ino != stm ->file_stm.st.st_ino)
+    { 
+        int fd = open(stm ->file_stm.file_name, O_APPEND) ;
+        if(fd < 0 )
+        {
+            return -1 ;
+        }
+        close(stm ->file_stm.fd) ;
+        stm ->file_stm.fd = fd ;
     }
-
+    return writeAll(stm ->file_stm.fd, data, size) ;
 }
 
 static int add_file_stream_to_ay(stream_array *stm_ay, const char *file_name, LOG_LEVEL lvl, filter_log is_write)
@@ -273,4 +286,11 @@ int write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size)
     int ret = __write_log(lgr, lvl, data, size) ;
     unlock_logger(lgr) ;
     return ret ;
+}
+
+#define LEVEL_2_NAME(lvl) (lvl == LEVEL_INFO? "INFO":(
+
+int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, int buffsz)
+{
+   return 0 ; 
 }
