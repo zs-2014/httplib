@@ -7,9 +7,9 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 
 #include "log.h"
-#include "util.h"
 
 static void free_logger(logger *lgr)
 {
@@ -279,7 +279,6 @@ static int __write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size)
     }
 }
 
-//时间,thread-id,file:lineno [level-name] 
 int write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size)
 {
     lock_logger(lgr) ;
@@ -288,9 +287,27 @@ int write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size)
     return ret ;
 }
 
-#define LEVEL_2_NAME(lvl) (lvl == LEVEL_INFO? "INFO":(
+#define LEVEL_2_NAME(lvl) (lvl == LEVEL_INFO? "INFO":\
+                          (lvl == LEVEL_DEBUG? "DEBUG":\
+                          (lvl == LEVEL_WARN? "WARN":\
+                          (lvl == LEVEL_ERROR? "ERROR":"UNKOWN"))))
 
-int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, int buffsz)
+int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, int buffsz, const char *fmt, ...)
 {
-   return 0 ; 
+   //time pid, theadid,filenae:lineno 
+    struct tm tm ;
+    time_t t = time(NULL) ;
+    localtime_r(&t, &tm) ;
+    char date_buff[128] = {0} ;
+    strftime(date_buff, sizeof(date_buff)-1, "%Y-%d-%m %M:%H:%S", &tm) ;
+    int ret = snprintf(buff, buffsz, "%s|process:%ld|thread:%ld|%s:%d|%s", date_buff, getpid(), pthread_self(), file_name, line, LEVEL_2_NAME(lvl)) ;
+    if(ret == -1)
+    {
+        return -1 ;
+    }
+    va_list vlst ;
+    va_start(vlst, fmt) ;
+    ret += vsnprintf(buff, buffsz-ret, fmt, vlst) ;
+    va_end(vlst) ;
+    return ret ;
 }

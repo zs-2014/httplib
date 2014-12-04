@@ -3,11 +3,11 @@
 
 #include <sys/stat.h> 
 #include <pthread.h>
-
-#define MALLOC(sz) malloc(sz)
-#define ALLOC(n, sz) alloc(n, sz)
-#define REALLOC(ptr, sz) realloc(ptr, sz)
-#define FREE(ptr) free(ptr)
+#include "util.h"
+//#define MALLOC(sz) malloc(sz)
+//#define ALLOC(n, sz) alloc(n, sz)
+//#define REALLOC(ptr, sz) realloc(ptr, sz)
+//#define FREE(ptr) free(ptr)
 
 typedef enum LOG_LEVEL
 { 
@@ -98,8 +98,21 @@ extern int add_stderr_stream(logger *lgr, LOG_LEVEL lvl, filter_log is_write) ;
 extern int add_file_stream(logger *lgr, const char *file_name, LOG_LEVEL lvl, filter_log is_write) ;
 
 extern int write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size) ;
+extern int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, int buffsz, const char *fmt, ...) ;
 #ifdef __cpluspluse
 }
 #endif
+
+extern logger *__log ;
+#define _LOG(lvl, fmt, ...) do{\
+               char buff[8192] = {0};\
+               int ret = make_log_record(lvl, __FILE__, __LINE__, buff, sizeof(buff), fmt, ##__VA_ARGS__) ;\
+               write_log(__log, lvl, buff, ret) ;\
+               }while(0) ;
+
+#define DEBUG(fmt, ...)  __LOG(LEVEL_DEBUG, fmt, ##__VA_ARGS__)
+#define INFO(fmt, ...)   __LOG(LEVEL_INFO, fmt, ##__VA_ARGS__)
+#define WARN(fmt, ...)   __LOG(LEVEL_WARN, fmt, ##__VA_ARGS__)
+#define ERROR(fmt, ...)  __LOG(LEVEL_ERROR, fmt, ##__VA_ARGS__)
 
 #endif
