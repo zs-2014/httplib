@@ -8,7 +8,7 @@
 
 #define DEFAULT_DATA_SIZE 10
 
-static DATA* reallocData(DATA *data, uint sz)
+static data_t* realloc_data(data_t *data, uint sz)
 {
     if(data == NULL)
     {
@@ -25,7 +25,7 @@ static DATA* reallocData(DATA *data, uint sz)
     }
     if(data ->data != NULL)
     {
-        memcpy(tmp, data ->data, sizeof(__DATA)*data ->currSz)  ;
+        memcpy(tmp, data ->data, sizeof(__DATA)*data ->curr_sz)  ;
         FREE(data ->data) ;
     }
     data ->data = tmp ;
@@ -33,15 +33,15 @@ static DATA* reallocData(DATA *data, uint sz)
     return data;
 }
 
-static int getGrow(DATA *data)
+static int get_grow(data_t *data)
 {
     return DEFAULT_DATA_SIZE ;
 }
 
-static int search(DATA *data, const char *key)
+static int search(data_t *data, const char *key)
 {
     int i = 0 ;
-    for(i = 0 ;i < data ->currSz ;i++)
+    for(i = 0 ;i < data ->curr_sz ;i++)
     {
        if(data ->data[i].key != NULL && strcmp(data ->data[i].key, key) == 0) 
        {
@@ -51,7 +51,7 @@ static int search(DATA *data, const char *key)
     return -1 ;
 }
 
-static int  __freeData(__DATA *data)
+static int  __free_data(__DATA *data)
 {
     if(data != NULL)
     {
@@ -67,87 +67,87 @@ static int  __freeData(__DATA *data)
     return 0 ;
 }
 
-int initData(DATA *data) 
+int init_data(data_t *data) 
 {
     if(data == NULL)
     {
         return -1 ; 
     }
     data ->data = NULL ;
-    data ->currSz = 0 ;
+    data ->curr_sz = 0 ;
     data ->size = 0 ;
     return 0 ;
 }
 
-int freeData(DATA *data)
+int free_data(data_t *data)
 {
     int i = 0 ;
-    for(i = 0 ; i < data ->currSz; i++)
+    for(i = 0 ; i < data ->curr_sz; i++)
     {
-        __freeData(data ->data + i) ;
+        __free_data(data ->data + i) ;
     }
     FREE(data ->data) ;
     data ->data = NULL ;
     return 0 ;
 }
-int addData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz) 
+int add_data(data_t *data, const uchar *key, int key_sz, const uchar *val, int val_sz) 
 {
-    if(data == NULL || key == NULL || keySz == 0 || val == NULL) 
+    if(data == NULL || key == NULL || key_sz == 0 || val == NULL) 
     {
         return -1 ;
     }
    
-    if(data ->currSz >= data ->size && reallocData(data, data ->currSz + getGrow(data)) == NULL)
+    if(data ->curr_sz >= data ->size && realloc_data(data, data ->curr_sz + get_grow(data)) == NULL)
     {
         return -1 ;
     }
-    data ->data[data ->currSz].key = quotebuff(key, keySz, NULL) ;
-    data ->data[data ->currSz].val = quotebuff(val, valSz, NULL) ;
-    data ->currSz += 1;
-    data ->dataLen += keySz + valSz ;
+    data ->data[data ->curr_sz].key = quotebuff(key, key_sz, NULL) ;
+    data ->data[data ->curr_sz].val = quotebuff(val, val_sz, NULL) ;
+    data ->curr_sz += 1;
+    data ->data_len += key_sz + val_sz ;
 }
 
-int deleteData(DATA *data, const uchar *key, int keySz) 
+int delete_data(data_t *data, const uchar *key, int key_sz) 
 {
     if(data == NULL || key == NULL) 
     {
         return -1 ;
     }
-    char *quoteKey = quotebuff(key, keySz, NULL) ;
-    uint i = search(data, quoteKey) ;
+    char *quote_key = quotebuff(key, key_sz, NULL) ;
+    uint i = search(data, quote_key) ;
     if(i == -1)
     {
         return 0 ;
     }
-    __freeData(data ->data + i ) ;
-    memcpy(data ->data + i, data ->data + i + 1, (data ->currSz - i - 1)*sizeof(__DATA)) ;
-    FREE(quoteKey) ;
-    data ->currSz -= 1 ; 
+    __free_data(data ->data + i ) ;
+    memcpy(data ->data + i, data ->data + i + 1, (data ->curr_sz - i - 1)*sizeof(__DATA)) ;
+    FREE(quote_key) ;
+    data ->curr_sz -= 1 ; 
     return 0 ;
 }
 
-int updateData(DATA *data, const uchar *key, int keySz, const uchar *val, int valSz) 
+int update_data(data_t *data, const uchar *key, int key_sz, const uchar *val, int val_sz) 
 {
     if(data == NULL || key == NULL || val == NULL)
     {
         return -1 ;
     }
-    char *quoteKey = quotebuff(key, keySz, NULL) ;
+    char *quote_key = quotebuff(key, key_sz, NULL) ;
     uint i = 0 ;
     if(i == -1)
     {
-        FREE(quoteKey) ;
+        FREE(quote_key) ;
         return -1;  
     }
     FREE(data ->data[i].val) ;
-    FREE(quoteKey) ;
-    data ->data[i].val = quotebuff(val, valSz, NULL) ;
+    FREE(quote_key) ;
+    data ->data[i].val = quotebuff(val, val_sz, NULL) ;
     return 0 ;
 }
 
-int isEmpty(DATA *data)
+int is_empty(data_t *data)
 {
-    if(data == NULL || data ->currSz == 0)
+    if(data == NULL || data ->curr_sz == 0)
     {
         return 1 ;
     }

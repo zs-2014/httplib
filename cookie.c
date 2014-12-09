@@ -7,7 +7,7 @@
 #define  DEFAULT_COOKIE_BUFF_SIZE 128 
 
 //如果申请空间失败，则原空间不会释放
-static char *reallocCookie(COOKIE *cookie, uint sz)
+static char *realloc_cookie(http_cookie_t *cookie, uint sz)
 {
     if(cookie == NULL)
     {
@@ -16,7 +16,7 @@ static char *reallocCookie(COOKIE *cookie, uint sz)
 
     if(cookie ->size > sz)
     {
-        return cookie ->cookieBuff ;
+        return cookie ->cookie_buff ;
     }
 
     char *tmp = (char *)CALLOC(1, (sz*sizeof(char))) ;
@@ -25,45 +25,45 @@ static char *reallocCookie(COOKIE *cookie, uint sz)
          return NULL ;
     } 
 
-    if(cookie ->cookieBuff != NULL)
+    if(cookie ->cookie_buff != NULL)
     {
-        memcpy(tmp, cookie ->cookieBuff, cookie ->currSize) ;
-        FREE(cookie ->cookieBuff) ;
+        memcpy(tmp, cookie ->cookie_buff, cookie ->curr_size) ;
+        FREE(cookie ->cookie_buff) ;
     }
     cookie ->size = sz ;
-    cookie ->cookieBuff = tmp ;
+    cookie ->cookie_buff = tmp ;
     return tmp ;
 }
 
 //获取增加空间的大小
-static uint getGrow(COOKIE *cookie)
+static uint get_grow(http_cookie_t *cookie)
 {
     return DEFAULT_COOKIE_BUFF_SIZE ;
 }
 
 //在session buffer中查找一个key val
-static int search(COOKIE *cookie, const char *key, char **key_b, char **val_b, char **val_e)
+static int search(http_cookie_t *cookie, const char *key, char **key_b, char **val_b, char **val_e)
 {
-    int keyLen = strlen(key) ;
-    *key_b = strstr(cookie ->cookieBuff, key) ;
+    int key_len = strlen(key) ;
+    *key_b = strstr(cookie ->cookie_buff, key) ;
     while(*key_b != NULL) 
     {
-        if((*key_b)[keyLen] == '=' && (*key_b == cookie ->cookieBuff || ((*key_b)[-1] == ';'))) 
+        if((*key_b)[key_len] == '=' && (*key_b == cookie ->cookie_buff || ((*key_b)[-1] == ';'))) 
         {
-            *val_b = *key_b + keyLen + 1 ;
+            *val_b = *key_b + key_len + 1 ;
             *val_e = strchr(*val_b, ';') ; 
             *val_e = *val_e == NULL ? NULL : *val_e;
             break ;
         }
         else
         {
-            *key_b = strstr(*key_b + keyLen + 1, key) ;
+            *key_b = strstr(*key_b + key_len + 1, key) ;
         }
     }
     return 0 ;
 }
 
-static delOption(COOKIE *cookie, const char *option)
+static del_option(http_cookie_t *cookie, const char *option)
 {
     if(cookie == NULL || option == NULL)
     {
@@ -75,18 +75,18 @@ static delOption(COOKIE *cookie, const char *option)
         return -1 ;
     }
 
-    char *option_b = strstr(cookie ->cookieBuff, option) ;
+    char *option_b = strstr(cookie ->cookie_buff, option) ;
     //如果查找到了这个session选项
     while(option_b != NULL)
     {
-        if(option_b != cookie ->cookieBuff)
+        if(option_b != cookie ->cookie_buff)
         {
             //保证session是完全匹配的
             if(option_b[-1] == ';' && option_b[oplen] == ';')
             {
-                memcpy(option_b, option_b + oplen + 1, cookie ->currSize - (option_b - cookie ->cookieBuff + oplen + 1)) ;
-                cookie ->currSize -= oplen + 1 ;
-                cookie ->cookieBuff[cookie ->currSize] = '\0' ;
+                memcpy(option_b, option_b + oplen + 1, cookie ->curr_size - (option_b - cookie ->cookie_buff + oplen + 1)) ;
+                cookie ->curr_size -= oplen + 1 ;
+                cookie ->cookie_buff[cookie ->curr_size] = '\0' ;
                 return 0 ; 
             }
             else
@@ -98,8 +98,8 @@ static delOption(COOKIE *cookie, const char *option)
         //如果这个session选项在开头
         else if (option_b[oplen] == ';')
         {
-           memcpy(option_b, option_b + oplen + 1, cookie ->currSize - (oplen + 1)) ;
-           cookie ->currSize -= oplen + 1 ;
+           memcpy(option_b, option_b + oplen + 1, cookie ->curr_size - (oplen + 1)) ;
+           cookie ->curr_size -= oplen + 1 ;
            return 0 ;
         }
         else
@@ -110,81 +110,81 @@ static delOption(COOKIE *cookie, const char *option)
     return 0 ;
 }
 
-int initCookie(COOKIE *cookie)
+int init_cookie(http_cookie_t *cookie)
 {
     if(cookie == NULL) 
     {
             return -1 ;
     }
-    cookie ->cookieBuff = NULL ;
+    cookie ->cookie_buff = NULL ;
     cookie ->size = 0 ;
-    cookie ->currSize = 0 ;
+    cookie ->curr_size = 0 ;
     return 0 ;
 }
 
-COOKIE *cookieCopy(COOKIE *dst, const COOKIE *src)
+http_cookie_t *cookie_copy(http_cookie_t *dst, const http_cookie_t *src)
 {
     if(src == NULL || dst == NULL)
     {
         return NULL ; 
     }
-    if(dst ->size <= src ->currSize && reallocCookie(dst, src ->size) == NULL)
+    if(dst ->size <= src ->curr_size && realloc_cookie(dst, src ->size) == NULL)
     {
         return NULL ;
     }
 
-    memcpy(dst ->cookieBuff, src ->cookieBuff, src ->currSize) ;
-    dst ->currSize = src ->currSize;
+    memcpy(dst ->cookie_buff, src ->cookie_buff, src ->curr_size) ;
+    dst ->curr_size = src ->curr_size;
     return dst ;
 }
 
-int freeCookie(COOKIE *cookie)
+int free_cookie(http_cookie_t *cookie)
 {
-    if(cookie == NULL && cookie ->cookieBuff != NULL)
+    if(cookie == NULL && cookie ->cookie_buff != NULL)
     {
-        FREE(cookie ->cookieBuff) ;
-        cookie ->cookieBuff = NULL ; 
+        FREE(cookie ->cookie_buff) ;
+        cookie ->cookie_buff = NULL ; 
         cookie ->size = 0 ;
-        cookie ->currSize = 0 ;
+        cookie ->curr_size = 0 ;
     }
     return 0 ;
 }
 
-int addKeyValue(COOKIE *cookie, const char *key, const char *value) 
+int add_key_value(http_cookie_t *cookie, const char *key, const char *value) 
 {
     if(cookie == NULL || value == NULL)
     {
         return -1 ;
     }
-    uint keyLen = (key != NULL ?strlen(key):0) ;
-    uint valLen = strlen(value) ;
+    uint key_len = (key != NULL ?strlen(key):0) ;
+    uint val_len = strlen(value) ;
 
     //len(";=") == 1
-    if(keyLen + valLen + 2 + cookie ->currSize >=  cookie ->size )
+    if(key_len + val_len + 2 + cookie ->curr_size >=  cookie ->size )
     {
         //空间不够，重新增加空间
-        if(reallocCookie(cookie, keyLen + valLen + 2 + cookie ->currSize + getGrow(cookie)) == NULL)
+        if(realloc_cookie(cookie, key_len + val_len + 2 + cookie ->curr_size + get_grow(cookie)) == NULL)
         {
             return -1 ;
         }
     }
-    if(keyLen != 0)
+    if(key_len != 0)
     { 
-        memcpy(cookie ->cookieBuff + cookie ->currSize, key, keyLen) ;
-        cookie ->currSize += keyLen ;
-        cookie ->cookieBuff[cookie ->currSize] = '=' ;
-        cookie ->currSize += 1 ;
+        memcpy(cookie ->cookie_buff + cookie ->curr_size, key, key_len) ;
+        cookie ->curr_size += key_len ;
+        cookie ->cookie_buff[cookie ->curr_size] = '=' ;
+        cookie ->curr_size += 1 ;
     }
 
-    memcpy(cookie ->cookieBuff + cookie ->currSize, value, valLen) ;
-    cookie ->currSize += valLen ;
-    cookie ->cookieBuff[cookie ->currSize] = ';' ;
-    cookie ->currSize += 1 ;
-    cookie ->cookieBuff[cookie ->currSize] = '\0' ;
+    memcpy(cookie ->cookie_buff + cookie ->curr_size, value, val_len) ;
+    cookie ->curr_size += val_len ;
+    cookie ->cookie_buff[cookie ->curr_size] = ';' ;
+    cookie ->curr_size += 1 ;
+    cookie ->cookie_buff[cookie ->curr_size] = '\0' ;
     return 0 ;
 }
 
-int deleteKey(COOKIE *cookie, const char *key) 
+int delete_key(http_cookie_t *cookie, const char *key) 
 {  
     if(cookie == NULL || key == NULL)
     {
@@ -199,69 +199,69 @@ int deleteKey(COOKIE *cookie, const char *key)
         return 0 ;
     }
     // 1  ';'
-    memcpy(key_b, val_e + 1, cookie ->currSize - (val_e - cookie ->cookieBuff + 1)) ;  
-    cookie ->currSize -= val_e - key_b + 1 ;
-    cookie ->cookieBuff[cookie ->currSize] = '\0' ;
+    memcpy(key_b, val_e + 1, cookie ->curr_size - (val_e - cookie ->cookie_buff + 1)) ;  
+    cookie ->curr_size -= val_e - key_b + 1 ;
+    cookie ->cookie_buff[cookie ->curr_size] = '\0' ;
     return 0 ;
 }
 
-int updateKey(COOKIE *cookie, const char *key, const char *newValue) 
+int update_key(http_cookie_t *cookie, const char *key, const char *new_value) 
 {
-    if(cookie == NULL || key == NULL || newValue == NULL)
+    if(cookie == NULL || key == NULL || new_value == NULL)
     {
         return -1 ;
     }
-    deleteKey(cookie, key) ;
-    return addKeyValue(cookie, key, newValue) ;
+    delete_key(cookie, key) ;
+    return add_key_value(cookie, key, new_value) ;
 }
 
-int setPath(COOKIE *cookie, const char *path)
+int set_path(http_cookie_t *cookie, const char *path)
 {
-    return addKeyValue(cookie, "path", path) ;
+    return add_key_value(cookie, "path", path) ;
 }
 
-int setDomain(COOKIE *cookie, const char *domain)
+int set_domain(http_cookie_t *cookie, const char *domain)
 {
-    return addKeyValue(cookie, "domain", domain) ;
+    return add_key_value(cookie, "domain", domain) ;
 }
 
-int addSecureOption(COOKIE *cookie) 
+int add_secure_option(http_cookie_t *cookie) 
 {
-    return addKeyValue(cookie, NULL, "secure") ;
+    return add_key_value(cookie, NULL, "secure") ;
 }
 
-int delSecureOption(COOKIE *cookie)
+int del_secure_option(http_cookie_t *cookie)
 {
-    return delOption(cookie, "secure") ;
+    return del_option(cookie, "secure") ;
 }
 
-int addHttponlyOption(COOKIE *cookie)
+int add_httponly_option(http_cookie_t *cookie)
 {
-    return addKeyValue(cookie, NULL, "httponly") ;
+    return add_key_value(cookie, NULL, "httponly") ;
 }
 
-int delHttponlyOption(COOKIE *cookie)
+int del_httponly_option(http_cookie_t *cookie)
 {
-    return delOption(cookie, "httponly") ;
+    return del_option(cookie, "httponly") ;
 }
 
 //获取键对应的值
-char *copyValue(COOKIE *cookie, const char *key, char *val) 
+char *copy_value(http_cookie_t *cookie, const char *key, char *val) 
 {
     if(cookie == NULL || key == NULL || val == NULL)
     {
         return NULL;
     }
 
-    int keyLen = strlen(key) ;
-    char *key_b = strstr(cookie ->cookieBuff, key) ;
+    int key_len = strlen(key) ;
+    char *key_b = strstr(cookie ->cookie_buff, key) ;
     char *val_b = NULL ;
     char *val_e = NULL ;
     while(key_b != NULL)
     {
-        if(key_b[keyLen] == '=')
+        if(key_b[key_len] == '=')
         {
-            val_b = key_b + keyLen + 1 ;
+            val_b = key_b + key_len + 1 ;
             val_e = strchr(val_b, ';') ; 
             val_e = val_e == NULL ? val_b + strlen(key_b): val_e;
             break ;
@@ -279,8 +279,8 @@ char *copyValue(COOKIE *cookie, const char *key, char *val)
     return memcpy(val, val_b ,val_e - val_b);
 }
 
-const char *cookie2String(COOKIE *cookie)
+const char *cookie2String(http_cookie_t *cookie)
 {
-    return cookie != NULL ?cookie ->cookieBuff :NULL ;
+    return cookie != NULL ?cookie ->cookie_buff :NULL ;
 }
 

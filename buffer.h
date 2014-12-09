@@ -6,25 +6,24 @@
 typedef struct buffer
 {
     uchar *buff ;
-    uint currSz ;
+    uint curr_sz ;
     uint size ;
-}BUFFER ;
+}buffer_t ;
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-extern BUFFER *lstripBuffer(BUFFER *buff, uchar ch) ;
-extern int initBuffer(BUFFER *buff) ;
-extern int freeBuffer(BUFFER *buff) ;
-extern int appendBuffer(BUFFER *buff, const uchar *val, uint sz) ;
-extern const uchar* getBufferData(const BUFFER *buff) ;
-extern int dropData(BUFFER *buff, uint sz) ;
-extern uint getBufferSize(const BUFFER *buff) ;
+extern buffer_t *lstrip_buffer(buffer_t *buff, uchar ch) ;
+extern int init_buffer(buffer_t *buff) ;
+extern int free_buffer(buffer_t *buff) ;
+extern int append_buffer(buffer_t *buff, const uchar *val, uint sz) ;
+extern const uchar* get_buffer_data(const buffer_t *buff) ;
+extern int drop_data(buffer_t *buff, uint sz) ;
+extern uint get_buffer_size(const buffer_t *buff) ;
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

@@ -11,7 +11,7 @@
 #define IS_RESERVED(x) (ascii_map[x]&RESERVED)
 
 #define INIT(safe) char ascii_map[256] = {0} ;init(ascii_map, safe) ;
-static char *safe_char = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$-_.+!*'()" ;
+static char *safe_char = "1234567890abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz$-_.+!*'()" ;
 static char *reserved_char = ";/?:@=&" ;
 static char hex_map[] = "0123456789ABCDEFabcdef" ; 
 //"%/:=&?~#+!$,;'@()*[]|"
@@ -151,7 +151,6 @@ uchar *unquote(const char *urlstr, uint sz)
     *pout = '\0' ;
     return ptmp;
 }
-
 
 char *urlencode(const char *str)
 {

@@ -10,36 +10,36 @@
 
 #define DEFAULT_GROW_SIZE  256
 
-int initHttpHeader(HEADER *httphdr)
+int init_http_header(http_request_header_t *httphdr)
 {
     if(httphdr == NULL)
     {
         return -1 ; 
     }
-    httphdr ->currSz = 0 ;
+    httphdr ->curr_sz = 0 ;
     httphdr ->size = 0 ;
-    httphdr ->hdrBuff = 0 ;
+    httphdr ->hdr_buff = 0 ;
     return 0 ;
 }
 
-int freeHttpHeader(HEADER *httphdr)
+int free_http_header(http_request_header_t *httphdr)
 {
     if(httphdr == NULL)
     {
         return -1; 
     }
-    FREE(httphdr ->hdrBuff) ;
-    httphdr ->hdrBuff = NULL ;
-    httphdr ->currSz = 0 ;
+    FREE(httphdr ->hdr_buff) ;
+    httphdr ->hdr_buff = NULL ;
+    httphdr ->curr_sz = 0 ;
     httphdr ->size = 0 ;
 }
 
-static int getGrow(HEADER *httphdr)
+static int get_grow(http_request_header_t *httphdr)
 {
     return DEFAULT_GROW_SIZE ;
 }
 
-static HEADER * reallocHeader(HEADER *httphdr, uint sz)
+static http_request_header_t * realloc_header(http_request_header_t *httphdr, uint sz)
 {
     if(httphdr == NULL)    
     {
@@ -54,71 +54,71 @@ static HEADER * reallocHeader(HEADER *httphdr, uint sz)
     {
         return NULL ;
     }
-    if(httphdr ->hdrBuff != NULL)
+    if(httphdr ->hdr_buff != NULL)
     {
-        memcpy(tmp, httphdr ->hdrBuff, httphdr ->currSz) ;
-        FREE(httphdr ->hdrBuff) ;
+        memcpy(tmp, httphdr ->hdr_buff, httphdr ->curr_sz) ;
+        FREE(httphdr ->hdr_buff) ;
     }
-    httphdr ->hdrBuff = tmp ;
+    httphdr ->hdr_buff = tmp ;
     httphdr ->size = sz ;
     return httphdr ;
 }
 
-static int search(HEADER *httphdr, const char *key, char **key_b, char **val_b, char **val_e)
+static int search(http_request_header_t *httphdr, const char *key, char **key_b, char **val_b, char **val_e)
 {
-    int keyLen = strlen(key) ;
-    *key_b = strcasestr(httphdr ->hdrBuff , key) ; 
+    int key_len = strlen(key) ;
+    *key_b = strcasestr(httphdr ->hdr_buff , key) ; 
     while(*key_b != NULL)
     {
-        if((*key_b)[keyLen] == ':' && (*key_b == httphdr ->hdrBuff || (*key_b)[-1] == '\n')) 
+        if((*key_b)[key_len] == ':' && (*key_b == httphdr ->hdr_buff || (*key_b)[-1] == '\n')) 
         {
-            *val_b = *key_b + keyLen + 1; 
+            *val_b = *key_b + key_len + 1; 
             *val_e = strstr(*val_b, "\r\n") ;
             *val_e = (*val_e != NULL ? *val_e : NULL ) ;
             break ;
         }
         else
         {
-           *key_b = strcasestr(*key_b + keyLen + 1, key) ; 
+           *key_b = strcasestr(*key_b + key_len + 1, key) ; 
         }
     }
     return 0 ;
 }
 
-int addHeader(HEADER *httphdr, const char *key, const char *val)
+int add_header(http_request_header_t *httphdr, const char *key, const char *val)
 {
     if(httphdr == NULL || key == NULL || val == NULL) 
     {
         return -1 ; 
     }
-    int keyLen = strlen(key) ;
-    int valLen = strlen(val) ;
+    int key_len = strlen(key) ;
+    int val_len = strlen(val) ;
     //  len(":") == 1 len("\r\n") == 2
-    if(httphdr ->currSz + keyLen + valLen + 3 >= httphdr ->size)
+    if(httphdr ->curr_sz + key_len + val_len + 3 >= httphdr ->size)
     {
-        if(reallocHeader(httphdr, httphdr ->currSz + keyLen + valLen + 3 + getGrow(httphdr)) == NULL) 
+        if(realloc_header(httphdr, httphdr ->curr_sz + key_len + val_len + 3 + get_grow(httphdr)) == NULL) 
         {
             return -1 ;
         }
     }
-    memcpy(httphdr ->hdrBuff + httphdr ->currSz, key, keyLen) ;
-    httphdr ->currSz += keyLen ;
-    httphdr ->hdrBuff[httphdr ->currSz] = ':' ;
-    httphdr ->currSz += 1 ;
-    memcpy(httphdr ->hdrBuff + httphdr ->currSz, val, valLen) ;
-    httphdr ->currSz += valLen ;
-    strcpy(httphdr ->hdrBuff + httphdr ->currSz, "\r\n") ;
-    httphdr ->currSz += 2 ;
+    memcpy(httphdr ->hdr_buff + httphdr ->curr_sz, key, key_len) ;
+    httphdr ->curr_sz += key_len ;
+    httphdr ->hdr_buff[httphdr ->curr_sz] = ':' ;
+    httphdr ->curr_sz += 1 ;
+    memcpy(httphdr ->hdr_buff + httphdr ->curr_sz, val, val_len) ;
+    httphdr ->curr_sz += val_len ;
+    strcpy(httphdr ->hdr_buff + httphdr ->curr_sz, "\r\n") ;
+    httphdr ->curr_sz += 2 ;
     return 0 ;
 }
 
-int deleteHeader(HEADER *httphdr, const char *key)
+int delete_header(http_request_header_t *httphdr, const char *key)
 {
-    if(httphdr == NULL || httphdr ->hdrBuff == NULL || key == NULL)
+    if(httphdr == NULL || httphdr ->hdr_buff == NULL || key == NULL)
     {
         return -1 ;
     }
-    int keyLen = strlen(key) ;
+    int key_len = strlen(key) ;
     char *key_b = NULL ;
     char *val_b = NULL ;
     char *val_e = NULL ;
@@ -127,34 +127,34 @@ int deleteHeader(HEADER *httphdr, const char *key)
     {
         return -1 ;
     }
-    memcpy(key_b, val_e + 2, httphdr ->currSz - (val_e - httphdr ->hdrBuff + 2)) ;  
-    httphdr ->currSz -= val_e - key_b + 2;
-    httphdr ->hdrBuff[httphdr ->currSz] = '\0' ;
+    memcpy(key_b, val_e + 2, httphdr ->curr_sz - (val_e - httphdr ->hdr_buff + 2)) ;  
+    httphdr ->curr_sz -= val_e - key_b + 2;
+    httphdr ->hdr_buff[httphdr ->curr_sz] = '\0' ;
     return 0 ;
 }
 
-int updateHeader(HEADER *httphdr, const char *key, const char *newValue)
+int update_header(http_request_header_t *httphdr, const char *key, const char *new_value)
 {
-    if(httphdr == NULL || key == NULL || newValue == NULL) 
+    if(httphdr == NULL || key == NULL || new_value == NULL) 
     {
         return -1 ;
     }
-    return deleteHeader(httphdr, key) || addHeader(httphdr, key, newValue) ;
+    return delete_header(httphdr, key) || add_header(httphdr, key, new_value) ;
 }
 
-const char *header2String(HEADER *httphdr) 
+const char *header2String(http_request_header_t *httphdr) 
 {
-    return httphdr != NULL ? (httphdr ->currSz == 0 ? nullStrPtr : httphdr ->hdrBuff) : nullStrPtr ;
+    return httphdr != NULL ? (httphdr ->curr_sz == 0 ? null_str_ptr : httphdr ->hdr_buff) : null_str_ptr ;
 }
 
-uint headerLen(HEADER *httphdr)
+uint header_len(http_request_header_t *httphdr)
 {
-    return httphdr != NULL ? httphdr ->currSz : 0 ;
+    return httphdr != NULL ? httphdr ->curr_sz : 0 ;
 }
 
-int hasHeader(HEADER *httphdr, const char *key) 
+int has_header(http_request_header_t *httphdr, const char *key) 
 {
-    if(httphdr == NULL || key == NULL || httphdr ->hdrBuff == NULL)
+    if(httphdr == NULL || key == NULL || httphdr ->hdr_buff == NULL)
     {
         return 0 ;
     }

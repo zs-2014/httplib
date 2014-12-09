@@ -86,12 +86,12 @@ typedef struct logger
     char *errmsg ;
 }logger;
 
-
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 extern logger *new_logger(const char *logger_name) ;
+extern logger *init_logger(const char *logger_name) ;
 extern void set_logger_level(logger *lgr, LOG_LEVEL lvl) ;
 extern int add_stdout_stream(logger *lgr, LOG_LEVEL lvl, filter_log is_write) ;
 extern int add_stderr_stream(logger *lgr, LOG_LEVEL lvl, filter_log is_write) ;
@@ -99,6 +99,7 @@ extern int add_file_stream(logger *lgr, const char *file_name, LOG_LEVEL lvl, fi
 
 extern int write_log(logger *lgr, LOG_LEVEL lvl, void *data, int size) ;
 extern int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, int buffsz, const char *fmt, ...) ;
+
 #ifdef __cpluspluse
 }
 #endif

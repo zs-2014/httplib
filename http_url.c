@@ -15,208 +15,208 @@
 #define NEXT_FRAGMENT  0X00000006 
 #define NEXT_END       0X00000007
 
-static int parseProtocol(URL *pUrl, char *pUrlStr)
+static int parse_protocol(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL|| pUrlStr == NULL)
+    if(p_url == NULL|| p_url_str == NULL)
     {
         return -1 ;
     }
-    char *protocol_b = pUrlStr ;
-    char *protocol_e = strstr(pUrlStr, "://") ;
+    char *protocol_b = p_url_str ;
+    char *protocol_e = strstr(p_url_str, "://") ;
     if(protocol_e == NULL)
     {
-        pUrl ->protocol = NULL ;
-        pUrl ->next = NEXT_HOST_PORT;
+        p_url ->protocol = NULL ;
+        p_url ->next = NEXT_HOST_PORT;
         return 0 ;
     }
     else
     {
-       pUrl ->protocol = protocol_b;
+       p_url ->protocol = protocol_b;
        *protocol_e = '\0' ;
-       pUrl ->next = NEXT_HOST_PORT ;
+       p_url ->next = NEXT_HOST_PORT ;
        return protocol_e - protocol_b + 3 ;
     }
 }
 
-static int parseHostAndPort(URL *pUrl, char *pUrlStr)
+static int parse_host_and_port(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL || pUrlStr == NULL)
+    if(p_url == NULL || p_url_str == NULL)
     {
         return -1 ;
     }
-    char *host_b = pUrlStr ;
+    char *host_b = p_url_str ;
     char *host_e = strchr(host_b, ':') ;
     //端口是默认的
     if(host_e == NULL)
     {
-        pUrl ->port = NULL ;
+        p_url ->port = NULL ;
         host_e = strchr(host_b, '/') ;
         //后面没有路径
         if(host_e == NULL)
         {
-            pUrl ->next = NEXT_END ;
-            pUrl ->host = host_b ;
+            p_url ->next = NEXT_END ;
+            p_url ->host = host_b ;
             return strlen(host_b) ;
         }
         //后面跟的还有路径这个参数
         else
         {
             *host_e = '\0' ;
-            pUrl ->host = host_b ;
-            pUrl ->next = NEXT_PATH ;
+            p_url ->host = host_b ;
+            p_url ->next = NEXT_PATH ;
             return host_e - host_b + 1 ;
         }
     }
     //指定了端口
     else
     {
-        pUrl ->host = host_b ;
+        p_url ->host = host_b ;
         *host_e = '\0' ;
         char *port_b = host_e + 1;
         char *port_e = strchr(port_b, '/');
         //端口后面没有路径了
         if(port_e == NULL)
         {
-           pUrl ->port = port_b ; 
-           pUrl ->next = NEXT_END ;
+           p_url ->port = port_b ; 
+           p_url ->next = NEXT_END ;
            return strlen(host_b) ;
         }
         //端口后面还有路径
         else
         {
            *port_e = '\0' ;
-           pUrl ->port = port_b ;
-           pUrl ->next = NEXT_PATH ;
+           p_url ->port = port_b ;
+           p_url ->next = NEXT_PATH ;
            return port_e - host_b + 1;
         }
     }
 }
 
-static int parsePath(URL *pUrl, char *pUrlStr)
+static int parse_path(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL || pUrlStr == NULL)
+    if(p_url == NULL || p_url_str == NULL)
     {
         return -1 ;
     }
 
-    char *path_b = pUrlStr ;
+    char *path_b = p_url_str ;
     char *path_e = strpbrk(path_b, ";?#") ;
     if(path_e != NULL)
     {
-        pUrl ->path = path_b ;
-        pUrl ->next = (*path_e == ';'? NEXT_PARAM :(*path_e == '?' ? NEXT_QUERY: NEXT_FRAGMENT) );
+        p_url ->path = path_b ;
+        p_url ->next = (*path_e == ';'? NEXT_PARAM :(*path_e == '?' ? NEXT_QUERY: NEXT_FRAGMENT) );
         *path_e = '\0' ;
         return path_e - path_b + 1 ;
     }
     else
     {
-        pUrl ->next = NEXT_END ;
-        pUrl ->path = path_b ;
+        p_url ->next = NEXT_END ;
+        p_url ->path = path_b ;
         return strlen(path_b) ;
     }
 }
 
-static int parseParams(URL *pUrl, char *pUrlStr)
+static int parse_params(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL || pUrlStr == NULL) 
+    if(p_url == NULL || p_url_str == NULL) 
     {
         return -1 ;
     }
 
-    char *param_b = pUrlStr ;
+    char *param_b = p_url_str ;
     char *param_e = strpbrk(param_b, "?#");
     //路径后面的特殊参数后面还有字符串
     if(param_e != NULL)
     {
-        pUrl ->param = param_b ;
-        pUrl ->next = (*param_e == '?' ? NEXT_QUERY:NEXT_FRAGMENT) ;
+        p_url ->param = param_b ;
+        p_url ->next = (*param_e == '?' ? NEXT_QUERY:NEXT_FRAGMENT) ;
         *param_e = '\0' ; 
         return param_e - param_b + 1 ;
     }
     //路径后面没有字符串了
     else
     {
-        pUrl ->param = param_b ;
-        pUrl ->next = NEXT_END ;
+        p_url ->param = param_b ;
+        p_url ->next = NEXT_END ;
         return strlen(param_b) ;
     }
 }
 
-static int parseQueryString(URL *pUrl, char *pUrlStr)
+static int parse_query_string(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL || pUrlStr == NULL)
+    if(p_url == NULL || p_url_str == NULL)
     {
         return -1 ;
     }
-    char *query_b = pUrlStr ;
+    char *query_b = p_url_str ;
     char *query_e = strchr(query_b, '#') ;
     if(query_e == NULL)
     {
-        pUrl ->query = query_b ;
-        pUrl ->next = NEXT_END ;
+        p_url ->query = query_b ;
+        p_url ->next = NEXT_END ;
         return strlen(query_b) ;
     }
     else
     {
         *query_e = '\0' ;
-        pUrl ->query = query_b ;
-        pUrl ->next = NEXT_FRAGMENT ;
+        p_url ->query = query_b ;
+        p_url ->next = NEXT_FRAGMENT ;
         return query_e - query_b + 1;
     }
 }
 
-static int parseFragment(URL *pUrl, char *pUrlStr)
+static int parse_fragment(http_url_t *p_url, char *p_url_str)
 {
-    if(pUrl == NULL || pUrlStr == NULL)
+    if(p_url == NULL || p_url_str == NULL)
     {
         return -1 ;
     }
-    pUrl ->next = NEXT_END ;
-    pUrl ->frag = pUrlStr ;
-    return strlen(pUrlStr) ;
+    p_url ->next = NEXT_END ;
+    p_url ->frag = p_url_str ;
+    return strlen(p_url_str) ;
 }
 
-int freeURL(URL *pUrl)
+int free_url(http_url_t *p_url)
 {
-    if(pUrl == NULL)
+    if(p_url == NULL)
     {
         return 0;
     }
-    if(pUrl ->urlbuff)
+    if(p_url ->urlbuff)
     {
-        FREE(pUrl ->urlbuff) ;
+        FREE(p_url ->urlbuff) ;
     }
-    pUrl ->urlbuff = NULL ;
-    pUrl = NULL ;
+    p_url ->urlbuff = NULL ;
+    p_url = NULL ;
     return 0 ;
 }
 
-static int checkURL(const URL *pUrl)
+static int check_url(const http_url_t *p_url)
 {
-    if(pUrl == NULL)
+    if(p_url == NULL)
     {
         return -1 ;
     }
-    if(pUrl ->protocol != NULL)
+    if(p_url ->protocol != NULL)
     {
-       if(strcasecmp(pUrl ->protocol, "http") != 0 && strcasecmp(pUrl ->protocol, "https") != 0) 
+       if(strcasecmp(p_url ->protocol, "http") != 0 && strcasecmp(p_url ->protocol, "https") != 0) 
        {
             return -1 ;
        }
     }
-    if(pUrl ->host == NULL)
+    if(p_url ->host == NULL)
     {
         return -1 ;
     }
 
-    if(pUrl ->port != NULL)
+    if(p_url ->port != NULL)
     {
-       int port = atoi(pUrl ->port) ;
+       int port = atoi(p_url ->port) ;
        if(port < 0 || port > 65535)
        {
             return -1 ;
        }
-       const char *p = pUrl ->port ;
+       const char *p = p_url ->port ;
        while(*p != '\0')
        {
             if(!isdigit(*p++))
@@ -226,17 +226,17 @@ static int checkURL(const URL *pUrl)
        }
     }
     
-    //if(pUrl ->path != NULL && strlen(pUrl ->path) == 0)
+    //if(p_url ->path != NULL && strlen(p_url ->path) == 0)
     //{
      //   return -1 ;
     //}
     
-    if(pUrl ->query != NULL && strlen(pUrl ->query) == 0)
+    if(p_url ->query != NULL && strlen(p_url ->query) == 0)
     {
         return -1 ;
     }
 
-    if(pUrl ->frag != NULL && strlen(pUrl ->frag) == 0)
+    if(p_url ->frag != NULL && strlen(p_url ->frag) == 0)
     {
         return -1 ;
     }
@@ -244,58 +244,57 @@ static int checkURL(const URL *pUrl)
     return 0 ;
 }
 //protocol://hostname[:port]/path/[;parameters][?query]#fragment
-URL* parseURL(const char *pUrlStr)
+http_url_t* parse_url(const char *p_url_str)
 {
-    if(pUrlStr == NULL)
+    if(p_url_str == NULL)
     {
         return NULL ;
     }
-    URL *pUrl = (URL *)MALLOC(sizeof(URL)) ;
-    if(pUrl == NULL)
+    http_url_t *p_url = (http_url_t *)MALLOC(sizeof(http_url_t)) ;
+    if(p_url == NULL)
     {
         return NULL ;
     }
-    memset(pUrl, 0, sizeof(URL)) ;
-    char *tmp = (char *)unquotestr(pUrlStr) ;
-    pUrl ->urlbuff = quotestr(tmp, ":/?#=") ;   
+    memset(p_url, 0, sizeof(http_url_t)) ;
+    char *tmp = (char *)unquotestr(p_url_str) ;
+    p_url ->urlbuff = quotestr(tmp, ":/?#=") ;   
     FREE(tmp) ;
-    if(pUrl ->urlbuff == NULL)
+    if(p_url ->urlbuff == NULL)
     {
         goto _fails;
     }
-    pUrl ->next = NEXT_PROTOCOL ;
+    p_url ->next = NEXT_PROTOCOL ;
     int offset = 0 ;
-    while(pUrl ->next != NEXT_END)
+    while(p_url ->next != NEXT_END)
     {
-        switch(pUrl ->next)
+        switch(p_url ->next)
         {
             case NEXT_PROTOCOL:
-                offset += parseProtocol(pUrl, pUrl ->urlbuff+offset) ;
+                offset += parse_protocol(p_url, p_url ->urlbuff+offset) ;
                 break ;
             case NEXT_HOST_PORT: 
-                offset += parseHostAndPort(pUrl, pUrl ->urlbuff + offset) ;
+                offset += parse_host_and_port(p_url, p_url ->urlbuff + offset) ;
                 break ;
             case NEXT_PATH: 
-                offset += parsePath(pUrl, pUrl ->urlbuff + offset) ;
+                offset += parse_path(p_url, p_url ->urlbuff + offset) ;
                 break ;
             case NEXT_PARAM:
-                offset += parseParams(pUrl, pUrl ->urlbuff + offset) ;
+                offset += parse_params(p_url, p_url ->urlbuff + offset) ;
                 break ;
             case NEXT_QUERY:
-                offset += parseQueryString(pUrl, pUrl ->urlbuff + offset);
+                offset += parse_query_string(p_url, p_url ->urlbuff + offset);
                 break ;
             case NEXT_FRAGMENT:
-                offset += parseFragment(pUrl, pUrl ->urlbuff + offset) ;
+                offset += parse_fragment(p_url, p_url ->urlbuff + offset) ;
                 break ;
         }
     }
-    if(checkURL(pUrl) == 0)
+    if(check_url(p_url) == 0)
     {
-        return pUrl ;
+        return p_url ;
     }
 _fails:
-    freeURL(pUrl) ;   
+    free_url(p_url) ;   
     return NULL ;
 }
-
 

@@ -11,22 +11,17 @@
 #define MAX(a, b) (a) > (b) ? (a):(b)
 #define MIN(a, b) (a) > (b) ? (b):(a)
 
-
 typedef long long uint64 ;
 typedef unsigned int uint ;
 typedef unsigned char uchar ;
 
-
-static char *nullStrPtr = "" ; 
+static char *null_str_ptr = "" ; 
 #ifdef __cplusplus
 extern "C"{
 #endif 
 
-
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #endif

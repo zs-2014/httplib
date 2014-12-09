@@ -11,6 +11,8 @@
 
 #include "log.h"
 
+logger *__log = NULL ;
+
 static void free_logger(logger *lgr)
 {
     if(lgr != NULL)
@@ -114,7 +116,7 @@ static int write_file_stream(stream *stm, LOG_LEVEL lvl, void *data, int size)
         close(stm ->file_stm.fd) ;
         stm ->file_stm.fd = fd ;
     }
-    return writeAll(stm ->file_stm.fd, data, size) ;
+    return write_all(stm ->file_stm.fd, data, size) ;
 }
 
 static int add_file_stream_to_ay(stream_array *stm_ay, const char *file_name, LOG_LEVEL lvl, filter_log is_write)
@@ -311,3 +313,9 @@ int make_log_record(LOG_LEVEL lvl, const char *file_name, int line, char *buff, 
     va_end(vlst) ;
     return ret ;
 }
+logger *init_logger(const char *logger_name)
+{
+    __log = new_logger(logger_name == NULL ? "root": logger_name) ;   
+    return __log ;
+}
+

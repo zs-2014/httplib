@@ -9,7 +9,6 @@
 #define unquotebuff(urlstr, sz) unquote(urlstr, sz)
 #define unquotestr(urlstr) unquote(urlstr, strlen(urlstr))
 
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -22,6 +21,5 @@ extern char *urlencode(const char *str) ;
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

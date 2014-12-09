@@ -11,7 +11,7 @@
 #include <string.h>
 #include "util.h"
 
-static int setNonblock(int fd)
+static int set_nonblock(int fd)
 {
     int ret = fcntl(fd, F_GETFL, 0) ;   
     if(ret == -1)
@@ -22,7 +22,7 @@ static int setNonblock(int fd)
     return fcntl(fd, F_SETFL, ret) ; 
 }
 
-static int cancelNonblock(fd)
+static int cancel_nonblock(fd)
 {
     int ret = fcntl(fd, F_GETFL, 0) ;   
     if(ret == -1)
@@ -45,7 +45,7 @@ static int connect_with_timeout(int clifd, struct sockaddr *addr, socklen_t addr
     {
         return connect(clifd, addr, addrlen) ;
     }
-    if(setNonblock(clifd) < 0) 
+    if(set_nonblock(clifd) < 0) 
     {
         return -1 ;
     }
@@ -59,7 +59,7 @@ static int connect_with_timeout(int clifd, struct sockaddr *addr, socklen_t addr
     {
         return -1 ;
     }
-    if(cancelNonblock(clifd) < 0) 
+    if(cancel_nonblock(clifd) < 0) 
     {
         return -1 ;
     }
@@ -93,7 +93,7 @@ static int connect_with_timeout(int clifd, struct sockaddr *addr, socklen_t addr
     return -1 ;
 }
 
-int createServerSocket(const char *ip, const char *port, int lsncnt)
+int create_server_socket(const char *ip, const char *port, int lsncnt)
 { 
     if(ip == NULL || port == NULL)
     {
@@ -128,7 +128,7 @@ int createServerSocket(const char *ip, const char *port, int lsncnt)
     return fd ;
 }
 
-int connectToServer(const char *server, const char *port, int timeout)
+int connect_to_server(const char *server, const char *port, int timeout)
 {
     if(server == NULL || port == NULL)  
     {
@@ -186,30 +186,30 @@ char *itoa(int64_t num, char *buff)
     {
         return NULL ;
     }
-    char *tmpBuff = buff ;
-    char *tmpBuff1 = buff ;
+    char *tmp_buff = buff ;
+    char *tmp_buff1 = buff ;
     if(num < 0)
     {
-        *tmpBuff++ = '-' ;
+        *tmp_buff++ = '-' ;
         num = 0 - num ;
     }
     do
     {
-       *tmpBuff++ = num%10 + '0'; 
+       *tmp_buff++ = num%10 + '0'; 
        num = num/10 ;
     }while(num != 0) ;
-    *tmpBuff = '\0' ;
-    while(tmpBuff1 < --tmpBuff)
+    *tmp_buff = '\0' ;
+    while(tmp_buff1 < --tmp_buff)
     {
-        char c = *tmpBuff ;
-        *tmpBuff = *tmpBuff1 ;
-        *tmpBuff1 = c ;
-        tmpBuff1++ ;
+        char c = *tmp_buff ;
+        *tmp_buff = *tmp_buff1 ;
+        *tmp_buff1 = c ;
+        tmp_buff1++ ;
     }
     return buff ;
 }
 
-int skipChar(const char *str, int ch)
+int skip_char(const char *str, int ch)
 {
    if(str == NULL) 
    {
@@ -223,18 +223,18 @@ int skipChar(const char *str, int ch)
    return tmp - str ;
 }
 
-int sendData(int fd, const void *buff, int sz)
+int send_data(int fd, const void *buff, int sz)
 {
     if(fd < 0 || buff == NULL|| sz == 0)
     {
         return 0 ;
     }
-    int nSend = 0 ;
+    int n_send = 0 ;
     int ret = 0 ;
     const char *tmp = (const char *)buff ;
-    while((ret = write(fd, tmp + nSend, sz - nSend)) != 0)
+    while((ret = write(fd, tmp + n_send, sz - n_send)) != 0)
     { 
-        if(ret + nSend == sz)
+        if(ret + n_send == sz)
         {
             return sz ;
         }
@@ -244,33 +244,33 @@ int sendData(int fd, const void *buff, int sz)
             {
                 continue ;
             }
-           return nSend ; 
+           return n_send ; 
         }
         else
         {
-            nSend += ret ;
+            n_send += ret ;
         }
     }
-    return nSend ;
+    return n_send ;
 }
 
-int writeAll(int fd, void *buff, int sz)
+int write_all(int fd, void *buff, int sz)
 {
     if(fd < 0 || buff == NULL || sz == 0) 
     {
         return 0 ; 
     }
-    int nSend = 0 ;
+    int n_send = 0 ;
     do
     {
-        int ret = write(fd, ((char *)buff) + nSend, sz - nSend) ;
-        if(ret + nSend == sz)  
+        int ret = write(fd, ((char *)buff) + n_send, sz - n_send) ;
+        if(ret + n_send == sz)  
         {
             return sz ;
         }
         else if(ret > 0)
         {
-            nSend += ret;
+            n_send += ret;
         }
         else
         {
@@ -283,23 +283,23 @@ int writeAll(int fd, void *buff, int sz)
     }while(1) ;
 }
 
-int readFully(int fd, void *buff, int sz)
+int read_fully(int fd, void *buff, int sz)
 {
     if(fd < 0 || buff == NULL || sz == 0) 
     {
         return 0 ;
     }
-    int nRecv = 0 ;
+    int n_recv = 0 ;
     int ret = 0 ;
-    while((ret = read(fd, ((char *)buff) + nRecv, sz - nRecv)) != 0)
+    while((ret = read(fd, ((char *)buff) + n_recv, sz - n_recv)) != 0)
     {
-        if(ret + nRecv == sz) 
+        if(ret + n_recv == sz) 
         {
             return sz ;
         }
         else if(ret > 0 )
         {
-           nRecv += ret ; 
+           n_recv += ret ; 
         }
         else
         {
@@ -310,12 +310,12 @@ int readFully(int fd, void *buff, int sz)
             return -1;
         }
     }
-    return nRecv ;
+    return n_recv ;
 }
 
-char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
+char *read_until(int fd, int *total_len, int *len, const char *flagstr)
 {
-    if(fd < 0 || totalLen == NULL || len == NULL) 
+    if(fd < 0 || total_len == NULL || len == NULL) 
     {
         return NULL ;
     }
@@ -328,22 +328,22 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
     {
         return NULL ;
     }
-    int nRecv = 0 ;
+    int n_recv = 0 ;
     int ret = 0 ;
-    while((ret = read(fd, buff + nRecv, sz - nRecv)) != 0) 
+    while((ret = read(fd, buff + n_recv, sz - n_recv)) != 0) 
     {
        if(ret > 0) 
        {
-            buff[ret + nRecv] = '\0' ;
-            char *p = strstr(buff + nRecv, flagstr) ;
-            nRecv += ret ;
+            buff[ret + n_recv] = '\0' ;
+            char *p = strstr(buff + n_recv, flagstr) ;
+            n_recv += ret ;
             if(p != NULL)
             {
                 *len = p - buff + strlen(flagstr) ;
-                *totalLen = nRecv ;
+                *total_len = n_recv ;
                 return buff ;
             }
-            else if(p == NULL && nRecv == sz) 
+            else if(p == NULL && n_recv == sz) 
             {
                 buff = (char *)REALLOC(buff, sz + BUFF_GROW_SIZE + 1) ;
                 if(buff == NULL)
@@ -366,6 +366,6 @@ char *readUntil(int fd, int *totalLen, int *len, const char *flagstr)
     }
     FREE(buff) ;
     *len = 0 ;
-    *totalLen = 0 ;
+    *total_len = 0 ;
     return NULL ;
 }

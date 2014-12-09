@@ -5,31 +5,31 @@
 typedef struct cookie
 {
     
-    char *cookieBuff ;
+    char *cookie_buff ;
     uint size ;
-    uint currSize ;
+    uint curr_size ;
 
-}COOKIE;
+}http_cookie_t;
 
 #ifdef __cpluscplus
 extern "C" {
 #endif
 
-int freeCookie(COOKIE *cookie) ;
-int initCookie(COOKIE *cookie) ;
-int deleteKey(COOKIE *cookie, const char *key) ;
-int addKey(COOKIE *cookie, const char *key, const char *value) ;
-int updateKey(COOKIE *cookie, const char *key, const char *newVal) ;
+int free_cookie(http_cookie_t *cookie) ;
+int init_cookie(http_cookie_t *cookie) ;
+int delete_key(http_cookie_t *cookie, const char *key) ;
+int add_key(http_cookie_t *cookie, const char *key, const char *value) ;
+int update_key(http_cookie_t *cookie, const char *key, const char *new_val) ;
 
-int addSecureOption(COOKIE *cookie) ;
-int delSecureOption(COOKIE *cookie) ;
+int add_secure_option(http_cookie_t *cookie) ;
+int del_secure_option(http_cookie_t *cookie) ;
 
-int addHttponlyOption(COOKIE *cookie) ;
-int delHttponlyOption(COOKIE *cookie) ;
+int add_httponly_option(http_cookie_t *cookie) ;
+int del_httponly_option(http_cookie_t *cookie) ;
 
-COOKIE *cookieCopy(COOKIE *dst, const COOKIE *src) ;
-char *copyValue(COOKIE *cookie, const char *key, char *val) ;
-const char *cookie2String(COOKIE *cookie) ;
+http_cookie_t *cookie_copy(http_cookie_t *dst, const http_cookie_t *src) ;
+char *copy_value(http_cookie_t *cookie, const char *key, char *val) ;
+const char *cookie2String(http_cookie_t *cookie) ;
 #ifdef __cpluscplus
 }
 #endif

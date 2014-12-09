@@ -1,7 +1,7 @@
 #ifndef __HTTP_URL__H
 #define __HTTP_URL__H
 
-typedef struct URL
+typedef struct http_url_t
 {
     char *urlbuff ;   
     char *protocol ;
@@ -16,14 +16,14 @@ typedef struct URL
 
 //private:
     int next ;
-}URL;
+}http_url_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int freeURL(URL *pUrl) ;
-extern URL* parseURL(const char *pUrlStr) ;
+extern int free_url(http_url_t *p_url) ;
+extern http_url_t* parse_url(const char *p_url_str) ;
 
 #ifdef __cplusplus
 } 

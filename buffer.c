@@ -5,13 +5,13 @@
 #include "buffer.h"
 #include "global.h"
 
-static int getGrow(BUFFER *buff)
+static int get_grow(buffer_t *buff)
 {
     static int i = 1 ;
     return 512*i++ ;
 }
 
-static BUFFER *reallocBuffer(BUFFER *buff, uint sz)
+static buffer_t *realloc_buffer(buffer_t *buff, uint sz)
 {
     if(buff ->size > sz) 
     {
@@ -24,7 +24,7 @@ static BUFFER *reallocBuffer(BUFFER *buff, uint sz)
     }
     if(buff ->buff != NULL)
     {
-        memcpy(tmp, buff ->buff, buff ->currSz) ;
+        memcpy(tmp, buff ->buff, buff ->curr_sz) ;
         FREE(buff ->buff) ;
     }
     buff ->buff = tmp ;
@@ -32,78 +32,78 @@ static BUFFER *reallocBuffer(BUFFER *buff, uint sz)
     return buff ;
 }
 
-int initBuffer(BUFFER *buff)
+int init_buffer(buffer_t *buff)
 {
     if(buff == NULL)
     {
         return -1 ;
     }
     buff ->buff = NULL ;
-    buff ->currSz = 0 ;
+    buff ->curr_sz = 0 ;
     buff ->size = 0 ;
     return 0 ;
 }
 
-int freeBuffer(BUFFER *buff)
+int free_buffer(buffer_t *buff)
 {
     if(buff == NULL)
     {
         return -1 ;
     }
     FREE(buff ->buff) ;
-    buff ->currSz = 0 ;
+    buff ->curr_sz = 0 ;
     buff ->size = 0 ;
     return 0 ;
 }
 
-int appendBuffer(BUFFER *buff, const uchar *val, uint sz)
+int append_buffer(buffer_t *buff, const uchar *val, uint sz)
 {
     if(buff == NULL || val == NULL)    
     {
         return -1 ;
     }
-    if(buff ->currSz + sz > buff ->size)
+    if(buff ->curr_sz + sz > buff ->size)
     {
-        if(reallocBuffer(buff, buff ->currSz + sz + getGrow(buff)) == NULL)
+        if(realloc_buffer(buff, buff ->curr_sz + sz + get_grow(buff)) == NULL)
         {
             return -1;
         }
     }
-    memcpy(buff ->buff + buff ->currSz, val ,sz) ;
-    buff ->currSz += sz ;
+    memcpy(buff ->buff + buff ->curr_sz, val ,sz) ;
+    buff ->curr_sz += sz ;
     return 0 ;
 }
 
-BUFFER *lstripBuffer(BUFFER *buff, uchar ch)
+buffer_t *lstrip_buffer(buffer_t *buff, uchar ch)
 {
     if(buff == NULL)
     {
         return NULL ;
     }
-    for( ; buff ->currSz > 0 ; buff ->currSz--) 
+    for( ; buff ->curr_sz > 0 ; buff ->curr_sz--) 
     {
-        if(buff ->buff[buff ->currSz - 1] != ch)
+        if(buff ->buff[buff ->curr_sz - 1] != ch)
         {
             return buff ;
         }
     }
 }
 
-const uchar* getBufferData(const BUFFER *buff)
+const uchar* get_buffer_data(const buffer_t *buff)
 {
-    return buff != NULL ? (buff ->currSz == 0 ? (uchar *)nullStrPtr : buff ->buff) : (uchar *)nullStrPtr ;
+    return buff != NULL ? (buff ->curr_sz == 0 ? (uchar *)null_str_ptr : buff ->buff) : (uchar *)null_str_ptr ;
 }
 
-int dropData(BUFFER *buff, uint sz) 
+int drop_data(buffer_t *buff, uint sz) 
 {
     if(buff != NULL)
     {
-       buff ->currSz = buff ->currSz > sz ? buff ->currSz - sz:0 ;
+       buff ->curr_sz = buff ->curr_sz > sz ? buff ->curr_sz - sz:0 ;
     }
     return 0 ;
 }
 
-uint getBufferSize(const BUFFER *buff) 
+uint get_buffer_size(const buffer_t *buff) 
 {
-   return buff == NULL ? 0 : buff ->currSz ; 
+   return buff == NULL ? 0 : buff ->curr_sz ; 
 }

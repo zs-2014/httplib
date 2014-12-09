@@ -14,208 +14,208 @@
 #include "response.h"
 #include "log.h"
 
-int printCookie(COOKIE *cookie)
+int print_cookie(http_cookie_t *cookie)
 {
     if(cookie == NULL)
     {
         return -1 ;
     }
-    printf("cookiebuff = %s\n", cookie ->cookieBuff) ;
+    printf("cookiebuff = %s\n", cookie ->cookie_buff) ;
     return 0 ;
 }
-void updateTest()
+void update_test()
 {
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "path", "/") ;
-    addKeyValue(&cookie, "name1", "zs1") ;
-    addKeyValue(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
+    http_cookie_t cookie ;
+    init_cookie(&cookie) ;
+    add_key_value(&cookie, "path", "/") ;
+    add_key_value(&cookie, "name1", "zs1") ;
+    add_key_value(&cookie, "name", "test1 for update Test") ;
+    print_cookie(&cookie) ;
 
-    updateKey(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
+    update_key(&cookie, "name", "test1 for update Test") ;
+    print_cookie(&cookie) ;
     
-    updateKey(&cookie, "name", "test1 for update Test  xxxxxxx") ;
-    printCookie(&cookie) ;
+    update_key(&cookie, "name", "test1 for update Test  xxxxxxx") ;
+    print_cookie(&cookie) ;
 
-    updateKey(&cookie, "name", "") ;
-    printCookie(&cookie) ;
+    update_key(&cookie, "name", "") ;
+    print_cookie(&cookie) ;
 
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) - 1) ;
-    updateKey(&cookie, "name", buff);
-    printCookie(&cookie) ;
-    freeCookie(&cookie) ;
+    update_key(&cookie, "name", buff);
+    print_cookie(&cookie) ;
+    free_cookie(&cookie) ;
 }
 
-void delTest()
+void del_test()
 {
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "path", "/") ;
-    addKeyValue(&cookie, "name1", "zs1") ;
-    addKeyValue(&cookie, "name", "test1 for update Test") ;
-    printCookie(&cookie) ;
+    http_cookie_t cookie ;
+    init_cookie(&cookie) ;
+    add_key_value(&cookie, "path", "/") ;
+    add_key_value(&cookie, "name1", "zs1") ;
+    add_key_value(&cookie, "name", "test1 for update Test") ;
+    print_cookie(&cookie) ;
 
-    deleteKey(&cookie, "name") ;
-    printCookie(&cookie) ;
+    delete_key(&cookie, "name") ;
+    print_cookie(&cookie) ;
     
-    updateKey(&cookie, "name", "test1 for update Test  xxxxxxx") ;
-    printCookie(&cookie) ;
+    update_key(&cookie, "name", "test1 for update Test  xxxxxxx") ;
+    print_cookie(&cookie) ;
 
-    deleteKey(&cookie, "name") ;
-    printCookie(&cookie) ;
+    delete_key(&cookie, "name") ;
+    print_cookie(&cookie) ;
 
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) - 1) ;
-    deleteKey(&cookie, "name");
-    printCookie(&cookie) ;
+    delete_key(&cookie, "name");
+    print_cookie(&cookie) ;
 
-    freeCookie(&cookie) ;
+    free_cookie(&cookie) ;
 }
 
-void addTest()
+void add_test()
 {
-    COOKIE cookie ;
-    initCookie(&cookie) ;
+    http_cookie_t cookie ;
+    init_cookie(&cookie) ;
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) - 1) ;
-    addKeyValue(&cookie, "name", "val") ;
-    printCookie(&cookie) ;
-    addKeyValue(&cookie, "key", "value") ;
-    printCookie(&cookie) ;
-    addKeyValue(&cookie, "key", buff) ;
-    printCookie(&cookie) ;
+    add_key_value(&cookie, "name", "val") ;
+    print_cookie(&cookie) ;
+    add_key_value(&cookie, "key", "value") ;
+    print_cookie(&cookie) ;
+    add_key_value(&cookie, "key", buff) ;
+    print_cookie(&cookie) ;
 
-    freeCookie(&cookie) ;
+    free_cookie(&cookie) ;
 }
 
-void OptionTest()
+void Option_test()
 {
-    COOKIE cookie ;
-    initCookie(&cookie) ;
-    addHttponlyOption(&cookie) ;
-    printCookie(&cookie) ;
+    http_cookie_t cookie ;
+    init_cookie(&cookie) ;
+    add_httponly_option(&cookie) ;
+    print_cookie(&cookie) ;
 
-    addKeyValue(&cookie, "name", "zs") ;
-    addSecureOption(&cookie) ;
-    printCookie(&cookie);
-    addKeyValue(&cookie, "name1", "zs") ;
+    add_key_value(&cookie, "name", "zs") ;
+    add_secure_option(&cookie) ;
+    print_cookie(&cookie);
+    add_key_value(&cookie, "name1", "zs") ;
 
-    delHttponlyOption(&cookie) ;
-    printCookie(&cookie) ;
-    delSecureOption(&cookie) ;
-    printCookie(&cookie) ;
+    del_httponly_option(&cookie) ;
+    print_cookie(&cookie) ;
+    del_secure_option(&cookie) ;
+    print_cookie(&cookie) ;
 
-    freeCookie(&cookie) ;
+    free_cookie(&cookie) ;
 }
-void getValTest()
+void get_val_test()
 {
-    COOKIE cookie;
-    initCookie(&cookie) ;
-    addKeyValue(&cookie, "name", "value") ;
-    addKeyValue(&cookie, "name1", "value1") ;
-    addKeyValue(&cookie, "name2", "value2") ;
+    http_cookie_t cookie;
+    init_cookie(&cookie) ;
+    add_key_value(&cookie, "name", "value") ;
+    add_key_value(&cookie, "name1", "value1") ;
+    add_key_value(&cookie, "name2", "value2") ;
     char buff[30] = {0} ;
     char buff1[30] = {0} ;
     char buff2[30] = {0} ;
     char buff3[30] = {0} ;
-    printf("name = %s\nname1 = %s\nname2 = %s\nname3=%s\n", copyValue(&cookie, "name", buff), copyValue(&cookie, "name1", buff1), copyValue(&cookie, "name2", buff2), copyValue(&cookie, "name3", buff3)) ;
+    printf("name = %s\nname1 = %s\nname2 = %s\nname3=%s\n", copy_value(&cookie, "name", buff), copy_value(&cookie, "name1", buff1), copy_value(&cookie, "name2", buff2), copy_value(&cookie, "name3", buff3)) ;
 
 }
 
 int cookie_main(int argc, char *argv[])
 {
-    //updateTest() ;
-    //delTest() ;
-    //addTest() ;
-    //getValTest() ;
-    OptionTest() ;
+    //update_test() ;
+    //del_test() ;
+    //add_test() ;
+    //get_val_test() ;
+    Option_test() ;
     return 0 ;
 }
 
-void printHeader(HEADER *httphdr)
+void print_header(http_request_header_t *httphdr)
 {
-    printf("[%s]\n", httphdr ->hdrBuff) ;
+    printf("[%s]\n", httphdr ->hdr_buff) ;
 }
-void addHeaderTest()
+void add_header_test()
 {
-    HEADER header ;
-    initHttpHeader(&header) ;
-    addHeader(&header, "content-type", "application/json ;charset=utf-8"); 
-    printHeader(&header) ;
-    addHeader(&header, "content-length", "12045") ;
-    printHeader(&header) ;
+    http_request_header_t header ;
+    init_http_header(&header) ;
+    add_header(&header, "content-type", "application/json ;charset=utf-8"); 
+    print_header(&header) ;
+    add_header(&header, "content-length", "12045") ;
+    print_header(&header) ;
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) -1) ;
-    addHeader(&header, "Cookie", buff) ;
-    printHeader(&header) ;
-    freeHttpHeader(&header) ;
+    add_header(&header, "Cookie", buff) ;
+    print_header(&header) ;
+    free_http_header(&header) ;
 }
 
-void deleteHeaderTest()
+void delete_header_test()
 {
-    HEADER header ;
-    initHttpHeader(&header) ;
-    addHeader(&header, "content-type1", "application/json ;charset=utf-8"); 
-    printHeader(&header) ;
-    addHeader(&header, "content-length", "12045") ;
-    printHeader(&header) ;
+    http_request_header_t header ;
+    init_http_header(&header) ;
+    add_header(&header, "content-type1", "application/json ;charset=utf-8"); 
+    print_header(&header) ;
+    add_header(&header, "content-length", "12045") ;
+    print_header(&header) ;
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) -1) ;
-    addHeader(&header, "Cookie", buff) ;
-    printHeader(&header) ;
-    //freeHttpHeader(&header) ;
+    add_header(&header, "Cookie", buff) ;
+    print_header(&header) ;
+    //free_http_header(&header) ;
     
-    deleteHeader(&header, "Cookie") ;
-    printHeader(&header) ;
-    deleteHeader(&header, "Content-length") ;
-    printHeader(&header) ;
-    deleteHeader(&header, "content-length");
-    printHeader(&header) ;
+    delete_header(&header, "Cookie") ;
+    print_header(&header) ;
+    delete_header(&header, "Content-length") ;
+    print_header(&header) ;
+    delete_header(&header, "content-length");
+    print_header(&header) ;
 
-    deleteHeader(&header, "content-type") ; 
-    printHeader(&header) ;
-    freeHttpHeader(&header) ;
+    delete_header(&header, "content-type") ; 
+    print_header(&header) ;
+    free_http_header(&header) ;
 }
 
-void updateHeaderTest()
+void update_header_test()
 {
-    HEADER header ;
-    initHttpHeader(&header) ;
-    addHeader(&header, "content-type", "application/json ;charset=utf-8"); 
-    printHeader(&header) ;
-    addHeader(&header, "content-length", "12045") ;
-    printHeader(&header) ;
+    http_request_header_t header ;
+    init_http_header(&header) ;
+    add_header(&header, "content-type", "application/json ;charset=utf-8"); 
+    print_header(&header) ;
+    add_header(&header, "content-length", "12045") ;
+    print_header(&header) ;
     char buff[1024] = {0} ;
     memset(buff, 'a', sizeof(buff) -1) ;
-    addHeader(&header, "Cookie", buff) ;
-    printHeader(&header) ;
+    add_header(&header, "Cookie", buff) ;
+    print_header(&header) ;
 
-    updateHeader(&header, "content-length", "12345") ;
-    printHeader(&header) ;
-    updateHeader(&header, "content-type", "plain/text");
-    printHeader(&header) ;
-    updateHeader(&header, "Cookie", "12ksfjskdjksdjl") ;
-    printHeader(&header) ;
-    freeHttpHeader(&header) ;
+    update_header(&header, "content-length", "12345") ;
+    print_header(&header) ;
+    update_header(&header, "content-type", "plain/text");
+    print_header(&header) ;
+    update_header(&header, "Cookie", "12ksfjskdjksdjl") ;
+    print_header(&header) ;
+    free_http_header(&header) ;
 }
 int httpheader_main(int argc, char *argv[])
 {
-    addHeaderTest() ;
-    deleteHeaderTest() ;
-    updateHeaderTest() ;
+    add_header_test() ;
+    delete_header_test() ;
+    update_header_test() ;
     return 0 ;
 }
 
-void printData(DATA *data)
+void print_data(data_t *data)
 {
     if(data == NULL)
     {
         return  ;
     }
     //int i = 0 ;
-    //for(i = 0 ;i < data ->currSz ;i++)
+    //for(i = 0 ;i < data ->curr_sz ;i++)
     //{
     //    printf("key:%s\nval=%s\n", data->data[i].key, data ->data[i].val) ;
     //}
@@ -225,69 +225,67 @@ void printData(DATA *data)
     }
 }
 
-void AddData()
+void Add_data()
 {
-    DATA data ;
-    initData(&data) ;
+    data_t data ;
+    init_data(&data) ;
     int i = 0 ;
     for(i = 0 ;i < 20 ;i++)
     {
-        addData(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
-        addData(&data, "test", strlen("test"), "this is a test", strlen("this is a test")) ;
+        add_data(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
+        add_data(&data, "test", strlen("test"), "this is a test", strlen("this is a test")) ;
     }
-    printData(&data) ;
-    freeData(&data) ;
+    print_data(&data) ;
+    free_data(&data) ;
 }
-void delData()
+void del_data()
 {
-    DATA data ;
-    initData(&data) ;
-    addData(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
-    deleteData(&data, "测试", strlen("测试")) ;
-    deleteData(&data, "测试", strlen("测试")) ;
-    addData(&data, "test", strlen("test"), "this is a test", strlen("this is a test")) ;
-    addData(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
-    printData(&data) ;
-    freeData(&data) ;
+    data_t data ;
+    init_data(&data) ;
+    add_data(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
+    delete_data(&data, "测试", strlen("测试")) ;
+    add_data(&data, "test", strlen("test"), "this is a test", strlen("this is a test")) ;
+    add_data(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
+    print_data(&data) ;
+    free_data(&data) ;
 }
 void update()
 {
-    DATA data ;
-    initData(&data) ;
-    addData(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
-    updateData(&data, "测试", strlen("测试"), "this is a test", strlen("this is a test")) ;
-    printData(&data) ;
-    freeData(&data) ;
+    data_t data ;
+    init_data(&data) ;
+    add_data(&data, "测试", strlen("测试"), "这是个测试", strlen("这是个测试")) ;
+    update_data(&data, "测试", strlen("测试"), "this is a test", strlen("this is a test")) ;
+    print_data(&data) ;
+    free_data(&data) ;
 
 }
 int data_main(int argc, char *argv[])
 {
-    //AddData() ; 
-    //delData() ;
+    //Add_data() ; 
+    //del_data() ;
     update() ;
     return 0 ;
 }
 
-int printURL(const URL *pUrl)
+int print_url(const http_url_t *p_url)
 {
-    if(pUrl == NULL) 
+    if(p_url == NULL) 
     {
          return -1 ;
     }
     printf("protocol:%s\nhost:%s\nport:%s\npath:%s\nparams:%s\nquery:%s\nfragment:%s\n", 
-            pUrl ->protocol, pUrl ->host,pUrl ->port, pUrl ->path, pUrl ->param, pUrl ->query, pUrl ->frag) ;
+            p_url ->protocol, p_url ->host,p_url ->port, p_url ->path, p_url ->param, p_url ->query, p_url ->frag) ;
 }
-
 
 int url_main(int argc, char *argv[])
 {
-    URL *pUrl = parseURL("http://172.100.101.145:8088\0/index.html/;name=zs?key=value#this is in the fragment") ;
-    printURL(pUrl) ;
-    freeURL(pUrl);
+    http_url_t *p_url = parse_url("http://172.100.101.145:8088\0/index.html/;name=zs?key=value#this is in the fragment") ;
+    print_url(p_url) ;
+    free_url(p_url);
     return 0 ;
 }
 
-void printHttpResponseHeader(HttpResponseHeader *httphdr)
+void print_http_response_header(http_response_header_t *httphdr)
 {
     if(!httphdr)
     {
@@ -303,65 +301,65 @@ void printHttpResponseHeader(HttpResponseHeader *httphdr)
 
 int request_main(int argc, char *argv[])
 {
-    HTTPREQUEST request ;
-    initHttpRequest(&request) ;
-    //setHttpRequestUrl(&request,"http://172.100.101.106:9393/util/v1/uploadfile") ;
-    setHttpRequestUrl(&request,"http://search.jd.com/Search?keyword=http%E5%8D%8F%E8%AE%AE&enc=utf-8&suggest=1") ;
-    //addRequestData(&request, "userid", strlen("userid"), "GcqRaNEt", strlen("GcqRaNEt")) ;
-    //addRequestData(&request, "category", strlen("category"), "1", strlen("1")) ;
-    //addRequestData(&request, "source", strlen("source"), "1", strlen("1")) ;
-    //addRequestData(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
-    //addPostFile(&request, "file", "small.jpg") ;
-    //addPostFile(&request, "file1", "/home/zhangshuang/info.log") ;
-    HTTPRESPONSE *rsp = sendRequestWithGET(&request, -1) ;
+    http_request_t request ;
+    init_http_request(&request) ;
+    //set_http_request_url(&request,"http://172.100.101.106:9393/util/v1/uploadfile") ;
+    set_http_request_url(&request,"http://search.jd.com/Search?keyword=http%E5%8D%8F%E8%AE%AE&enc=utf-8&suggest=1") ;
+    //add_request_data(&request, "userid", strlen("userid"), "Gcq_ra_net", strlen("Gcq_ra_net")) ;
+    //add_request_data(&request, "category", strlen("category"), "1", strlen("1")) ;
+    //add_request_data(&request, "source", strlen("source"), "1", strlen("1")) ;
+    //add_request_data(&request, "tag", strlen("tag"), "avatar", strlen("avatar")) ;
+    //add_post_file(&request, "file", "small.jpg") ;
+    //add_post_file(&request, "file1", "/home/zhangshuang/info.log") ;
+    http_response_t *rsp = send_request_with_get(&request, -1) ;
     if(rsp == NULL)
     {
         printf("fail to parse the http response \n") ;
         return -1 ;
     }
     char buff[10250] = {0} ;
-    //int ret = readFully(rsp ->rspfd, buff, sizeof(buff)-1) ;
+    //int ret = read_fully(rsp ->rspfd, buff, sizeof(buff)-1) ;
     //printf("%s", buff) ;
-    readResponse(rsp, buff, sizeof(buff) - 1) ;
+    read_response(rsp, buff, sizeof(buff) - 1) ;
     printf("read [%s]\n", buff) ;
-    freeHttpRequest(&request) ;
-    //printHttpResponseHeader(&rsp ->httprsphdr) ;
-    freeHttpResponse(rsp) ;
+    free_http_request(&request) ;
+    //print_http_response_header(&rsp ->httprsphdr) ;
+    free_http_response(rsp) ;
     return 0 ;
 }
 
-void printBuffer(BUFFER *buff)
+void print_buffer(buffer_t *buff)
 {
-    printf("buff:currSz = %u size = %u\n", buff ->currSz, buff ->size) ;
+    printf("buff:curr_sz = %u size = %u\n", buff ->curr_sz, buff ->size) ;
 }
-void appendBufferTest()
+void append_buffer_test()
 {
-   BUFFER buff ;
-   initBuffer(&buff) ;
-   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
-   printBuffer(&buff) ;
-   appendBuffer(&buff, "hello,world",strlen("hello,world")) ;
-   printBuffer(&buff) ;
+   buffer_t buff ;
+   init_buffer(&buff) ;
+   append_buffer(&buff, "hello,world",strlen("hello,world")) ;
+   print_buffer(&buff) ;
+   append_buffer(&buff, "hello,world",strlen("hello,world")) ;
+   print_buffer(&buff) ;
    char bf[1024] = {0} ;
-   appendBuffer(&buff, bf, sizeof(bf)) ;
-   printBuffer(&buff) ;
-   freeBuffer(&buff) ;
+   append_buffer(&buff, bf, sizeof(bf)) ;
+   print_buffer(&buff) ;
+   free_buffer(&buff) ;
 }
 int buffer_main(int argc, char *argv[])
 {
-    appendBufferTest() ; 
+    append_buffer_test() ; 
     return 0 ; 
 }
 
 int util_main(int argc,char *argv[])
 {
-    int fd = connectToServer(argv[1], argv[2], atoi(argv[3])) ;
+    int fd = connect_to_server(argv[1], argv[2], atoi(argv[3])) ;
     printf("%d\n", fd)  ;
-    char buff[] = {"GET / HTTP/1.1\r\nContent-Type:plain/text\r\nUser-Agent:curlib2.7\r\n\r\n"} ; 
+    char buff[] = {"GET / HTTP/1.1\r\n_content-Type:plain/text\r\n_user-Agent:curlib2.7\r\n\r\n"} ; 
     printf("write = %d\n", write(fd,buff, strlen(buff))) ;
     int len = 0 ;
     int total ;
-    char *bff = readUntil(fd, &total, &len, "\r\n\r\n") ;
+    char *bff = read_until(fd, &total, &len, "\r\n\r\n") ;
     printf("len = [%d]\ntotal=%d\n", len, total) ;
     printf("%s\n", bff) ;
     close(fd) ;
@@ -372,7 +370,7 @@ int util_main(int argc,char *argv[])
 
 int log_main(int argc, char *argv)
 {
-    
+    init_logger(NULL) ;
     return 0 ;
 }
 
